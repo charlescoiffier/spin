@@ -15,7 +15,7 @@ export class DebugPanel {
    label.innerHTML=`<span>${title}<output></output></span><input type="range" min="${min}" max="${max}" step="${step}" aria-label="${title}">`;
    const input=label.querySelector('input')!, output=label.querySelector('output')!;
    const sync=()=>{ input.value=String(settings[key]);output.value=`${Number(settings[key].toFixed(2))} ${unit}`; };
-   syncControls.push(sync);sync();input.addEventListener('input',()=>{settings[key]=Number(input.value);sync();onChange(key);},{signal:this.controller.signal});
+   syncControls.push(sync);sync();input.addEventListener('input',()=>{settings[key]=Number(input.value);onChange(key);sync();},{signal:this.controller.signal});
    root.append(label);
   });
   const toggle=document.createElement('label');toggle.className='toggle';
@@ -24,10 +24,10 @@ export class DebugPanel {
   const button=document.createElement('button');button.textContent='↺ Réinitialiser le prototype';
   button.addEventListener('click',()=>{Object.assign(settings,defaults);reset();syncControls.forEach(sync=>sync());toggle.querySelector('input')!.checked=settings.trail;},{signal:this.controller.signal});
   root.append(button);
-  const foot=document.createElement('p');foot.className='note';foot.textContent='A · menthe / B · abricot\nObstacles sans collision · trajectoire du centre\nLissage : constante de temps (0 = immédiat).';root.append(foot);
+  const foot=document.createElement('p');foot.className='note';foot.textContent='A · menthe / B · abricot\nMurs avec rebond · trajectoire du centre\nLissage : constante de temps (0 = immédiat).';root.append(foot);
  }
  update(m: SpinMotion): void {
   this.status.textContent=`PIVOT ${m.pivot}   ·   ${m.direction===1?'↻ HORAIRE':'↺ ANTIHORAIRE'}`;
  }
- destroy(): void {this.controller.abort();}
+ destroy(): void {this.controller.abort();this.root.replaceChildren();}
 }
