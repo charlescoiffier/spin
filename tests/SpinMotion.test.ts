@@ -23,3 +23,13 @@ test('longueur réglable conserve le pivot et reset restaure les positions',()=>
  assert.deepEqual(m.b,p); near(Math.hypot(m.a.x-m.b.x,m.a.y-m.b.y),200);
  m.reset(); assert.equal(m.pivot,'A'); assert.equal(m.direction,1); near(m.b.x,200);
 });
+test('reverse conserve positions et pivot, translate conserve la barre',()=>{
+ const m=new SpinMotion(80,5);m.update(.2); const before=JSON.stringify([m.a,m.b,m.pivot]);
+ m.reverse();assert.equal(JSON.stringify([m.a,m.b,m.pivot]),before); assert.equal(m.direction,-1);
+ const a={...m.a};m.translate({x:8,y:-3});near(m.a.x,a.x+8);near(m.a.y,a.y-3);near(Math.hypot(m.a.x-m.b.x,m.a.y-m.b.y),80);
+});
+test('snapshot indépendant, restore reproductible et spawn orienté',()=>{
+ const m=new SpinMotion(80,5);m.resetAt({x:100,y:200},Math.PI/2);near(m.b.x,100);near(m.b.y,280);
+ const state=m.snapshot();m.update(.2);const result=m.snapshot();m.restore(state);m.update(.2);assert.deepEqual(m.snapshot(),result);
+ state.a.x=999;assert.notEqual(m.a.x,999);
+});
