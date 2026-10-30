@@ -1,0 +1,58 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { MazeRun } from "../src/modes/maze/MazeRun.ts";
+import { courses } from "../src/modes/maze/courses.ts";
+import { RecordStore } from "../src/modes/maze/RecordStore.ts";
+test("premier geste démarre et échange le pivot, restart rétablit tout", () => {
+  const run = new MazeRun(courses[0], new RecordStore(null));
+  run.reset(0);
+  const before = run.motion.snapshot();
+  run.update(100);
+  assert.deepEqual(run.motion.snapshot(), before);
+  run.press(100);
+  run.update(110);
+  assert.equal(run.session.status, "running");
+  assert.equal(run.motion.pivot, "B");
+  run.reset(120);
+  assert.equal(run.session.status, "ready");
+  assert.deepEqual(run.motion.snapshot(), before);
+});
+test("arrivée partielle refusée, complète termine une seule fois avec record", () => {
+  const store = new RecordStore(null),
+    run = new MazeRun(courses[0], store);
+  run.reset(0);
+  run.press(0);
+  run.update(10);
+  const e = courses[0].exit;
+  run.motion.resetAt({ x: e.x + 10, y: e.y + 80 }, 0);
+  run.update(20);
+  assert.equal(run.session.status, "running");
+  run.motion.resetAt({ x: e.x + 50, y: e.y + 80 }, 0);
+  run.update(30);
+  assert.equal(run.session.status, "finished");
+  const result = run.session.elapsedMs(30);
+  assert.ok(result > 0);
+  assert.equal(store.get(courses[0]), result);
+  const state = run.motion.snapshot();
+  run.press(40);
+  run.update(100);
+  assert.deepEqual(run.motion.snapshot(), state);
+});
+test("arrière-plan, longue frame, ready et reprise ne faussent pas les temps", () => {
+  const r = new MazeRun(courses[0], new RecordStore(null));
+  r.reset(0);
+  r.interrupt(10);
+  assert.equal(r.session.status, "ready");
+  r.press(20);
+  r.update(30);
+  r.interrupt(40);
+  r.press(50);
+  r.update(60);
+  assert.equal(r.session.status, "interrupted");
+  r.reset(100);
+  r.press(100);
+  r.update(351);
+  assert.equal(r.session.status, "interrupted");
+  r.update(999);
+  assert.equal(r.session.status, "interrupted");
+});

@@ -1,24 +1,74 @@
-# SPIN — prototype v0.1
+# SPIN — Labyrinthes contre-la-montre · v0.1
 
-Prototype d’arcade 2D inspiré de la mécanique de déplacement de *Twin Spin* (GlobZ).
-Deux boules reliées par une barre : touchez le terrain pour changer de pivot et
-inverser la rotation, puis explorez l’environnement.
+Deux boules reliées par une barre, un seul geste : changez de pivot pour rejoindre
+la sortie le plus rapidement possible. Un prototype d’arcade 2D inspiré de la
+mécanique de déplacement de _Twin Spin_ (GlobZ).
 
 **[Jouer dans le navigateur](https://charlescoiffier.github.io/spin/)** ·
 [Code source](https://github.com/charlescoiffier/spin)
 
-Phaser 3 + TypeScript + Vite, sans moteur physique.
-Node.js 22.12+ (ou 20.19+) requis.
+## Jouer
 
-## Démarrage
+- Touchez le terrain ou cliquez avec le bouton principal : le pivot change et
+  le sens de rotation s’inverse, sans saut de position.
+- Le premier toucher démarre la course et exécute ce même geste.
+- Les murs réagissent aux deux boules **et à la barre** : ils inversent la rotation
+  et repoussent légèrement l’ensemble, en conservant le pivot actif et la longueur.
+- Aucun supplément de temps ni retour au départ lors d’un choc.
+- Placez les **deux boules entièrement dans la zone menthe** pour terminer.
+- Recommencez pour améliorer votre record, enregistré localement par parcours.
+- Les boutons des trois parcours sont accessibles dès le départ. La petite carte
+  montre votre position en abricot et la sortie en menthe.
+
+### Trois parcours
+
+| Parcours       | Principe                                                    |
+| -------------- | ----------------------------------------------------------- |
+| Le détour      | Apprendre à contourner un mur et négocier de larges virages |
+| Les lacets     | Enchaîner les changements de direction                      |
+| La bifurcation | Choisir un chemin autour de l’îlot central                  |
+
+Le passage en arrière-plan interrompt une tentative. Une pause de calcul de plus
+de 250 ms l’interrompt également : il faut recommencer pour obtenir un temps valide.
+Le chronomètre utilise une horloge monotone, avec affichage au centième et
+résolution de simulation d’environ 4,17 ms. Les records ne sont ni partagés ni
+synchronisés ; si le stockage est refusé, ils sont conservés pour la session.
+
+## Laboratoire
+
+Le bouton **Ouvrir le laboratoire** donne accès aux réglages libres, au quadrillage,
+aux repères et à quelques murs pour observer les rebonds. Le panneau de débogage
+est séparé de l’interface de course. **Jouer aux labyrinthes** permet de revenir.
+
+| Paramètre         | Valeur par défaut et valeur fixe en course |
+| ----------------- | ------------------------------------------ |
+| Vitesse angulaire | 5 rad/s                                    |
+| Longueur de barre | 80 px                                      |
+| Zoom caméra       | 0,7                                        |
+| Lissage caméra    | 0,3 s                                      |
+
+Au laboratoire, les réglages s’appliquent immédiatement. Modifier la longueur
+conserve le pivot et déplace la boule mobile ; une valeur qui placerait la barre
+ou une boule dans un mur est refusée. La réinitialisation remet les réglages par
+défaut, les positions, la trajectoire et la caméra.
+
+Le lissage caméra est une constante de temps : environ 63 % du recentrage est
+effectué après cette durée, zéro donnant un suivi immédiat. La caméra ne modifie
+jamais les positions du monde. Le sens de rotation utilise le repère écran (Y vers
+le bas). La trajectoire représente le centre de la barre et conserve 1200 points.
+
+## Installation et développement
+
+Phaser 3 + TypeScript strict + Vite, sans moteur physique ni serveur de jeu.
+Node.js 22.12+ recommandé (ou 20.19+).
 
 ```sh
 npm install
 npm run dev
 ```
 
-Ouvrir l’URL affichée par Vite. Pour tester sur un téléphone du même réseau,
-utiliser l’adresse réseau affichée par Vite (port 5173 par défaut).
+Ouvrez l’URL affichée par Vite. Sur un téléphone du même réseau, utilisez l’adresse
+réseau affichée (port 5173 par défaut).
 
 ```sh
 npm test
@@ -26,61 +76,36 @@ npm run build
 npm run preview
 ```
 
-## Commandes
+## Architecture
 
-Cliquer avec le bouton principal ou toucher le terrain pour changer de pivot
-et inverser simultanément la rotation. Le panneau de test n’active pas le geste.
-Le sens est exprimé dans le repère écran (Y vers le bas).
+- `src/core` : cinématique pure, états et simulation à pas fixe de 1/240 s.
+- `src/collision` : contacts disque/capsule contre rectangles, arrêt au contact,
+  inversion et recul progressif de 8 px sur 80 ms, limité par les autres murs.
+- `src/modes/maze` : parcours versionnés, session, chronomètre et records.
+- `src/rendering` : personnage, trajectoire et labyrinthes.
+- `src/input`, `src/camera` : entrées souris/tactile et suivi du pivot partagés.
+- `src/scenes` : assemblage du laboratoire et du mode course.
+- `src/ui`, `src/debug` : interface de course et contrôles de développement distincts.
+- `tests` : invariants de mouvement, contacts, temps, stockage défaillant et
+  traversées complètes des parcours par suites de touchers.
+- `docs/superpowers` : conception et plan de développement.
 
-Les réglages s’appliquent immédiatement. Modifier la longueur déplace la boule
-mobile en conservant le pivot ; contrairement au changement de pivot, ce réglage
-peut donc déplacer instantanément une boule. La réinitialisation rétablit tous
-les réglages, les positions, le suivi et la trajectoire.
+Une même suite d’appuis horodatés donne le même mouvement à pas fixe,
+à la précision flottante près. Les contacts persistants sont verrouillés jusqu’à
+séparation ; les murs restent solides pendant le recul. Aucune correction par
+téléportation et aucune fenêtre d’immunité aux collisions.
 
-Le lissage caméra est une constante de temps en secondes : après cette durée,
-environ 63 % du recentrage est effectué. Zéro donne un suivi immédiat.
-La trajectoire montre le centre de la barre, conserve au maximum 1200 points et
-s’efface quand on modifie la longueur, bascule son affichage ou réinitialise.
-Le quadrillage couvre une aire de 8000 × 8000 unités, librement traversable,
-sans limites physiques ni collisions. Le mouvement reste possible au-delà.
+## Publication et validation
 
-## Organisation
+GitHub Actions exécute les tests, compile puis publie `dist/` sur GitHub Pages à
+chaque push sur `main`. La source Pages est **GitHub Actions** dans les paramètres
+du dépôt. Le workflow peut aussi être relancé manuellement.
 
-- `src/core` : cinématique pure et paramètres, réutilisables par de futurs modes.
-- `src/rendering` : boules, barre et trajectoire.
-- `src/input` : entrées Phaser souris/tactile.
-- `src/camera` : suivi indépendant des coordonnées du monde.
-- `src/environment` : terrain de test, repères et obstacles décoratifs.
-- `src/debug` : panneau DOM de développement.
-- `src/scenes` : assemblage des composants.
+Les tests automatisés vérifient des traversées complètes des trois parcours et
+les deux routes de La bifurcation, sans pénétration des murs. L’interface est
+contrôlée dans le navigateur aux formats ordinateur, portrait et paysage.
+Ces simulations ne remplacent pas un essai tactile sur un téléphone réel,
+qui reste à effectuer pour affiner le ressenti du rebond et la difficulté.
 
-La simulation utilise une rotation analytique en fonction du temps écoulé.
-À chaque changement de pivot, les positions restent intactes et l’angle est
-reconstruit depuis le vecteur entre les boules. Une même suite d’événements
-aux mêmes temps produit le même mouvement, à la précision flottante près.
-Les tests vérifient pivot fixe, longueur, continuité, inversion et indépendance
-du découpage temporel. Les futures scènes de modes peuvent partager SpinMotion
-sans dépendre du terrain de test ni du panneau DOM.
-
-Capacitor n’est pas intégré dans cette version. Le build statique `dist/` pourra
-servir de `webDir` lors de cette adaptation.
-
-## Réglages par défaut
-
-| Paramètre | Valeur |
-| --- | --- |
-| Vitesse angulaire | 5 rad/s |
-| Longueur de barre | 80 px |
-| Zoom caméra | 0,7 |
-| Lissage caméra | 0,3 s |
-
-## Publication
-
-GitHub Actions exécute les tests, compile le projet et publie `dist/` sur
-GitHub Pages à chaque push sur `main`. La source Pages doit être **GitHub Actions**
-dans les paramètres du dépôt. Le workflow peut aussi être relancé manuellement.
-
-## Suite envisagée
-
-Un mode labyrinthe contre-la-montre est en cours de conception. Les labyrinthes,
-le chronomètre et les rebonds sur les murs ne sont pas encore implémentés.
+Capacitor, sons, monétisation et classement en ligne ne sont pas intégrés.
+Le build statique `dist/` pourra servir de `webDir` lors de l’adaptation Capacitor.
