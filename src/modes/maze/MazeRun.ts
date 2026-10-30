@@ -5,8 +5,10 @@ import { finishReached } from "./finishReached";
 import { RaceSession } from "./RaceSession";
 import { type MazeDefinition, validateMaze } from "./MazeDefinition";
 import type { RecordStore } from "./RecordStore";
+import { defaults, type Settings } from "../../core/settings";
+import { validateRunSettings } from "./validateRunSettings";
 export class MazeRun {
-  readonly motion = new SpinMotion(80, 5);
+  readonly motion: SpinMotion;
   readonly session = new RaceSession();
   private stepper = new FixedStepper();
   private collisions: CollisionMotion;
@@ -14,10 +16,19 @@ export class MazeRun {
     readonly maze: MazeDefinition,
     private records: RecordStore,
     private autoSubmit = true,
+    settings: Settings = defaults,
   ) {
     const errors = validateMaze(maze);
+    if (!errors.length) errors.push(...validateRunSettings(maze, settings));
     if (errors.length) throw Error(errors.join("; "));
+    this.motion = new SpinMotion(settings.length, settings.speed);
     this.collisions = new CollisionMotion(this.motion, maze.walls);
+    this.collisions.setRecoilDistance(settings.recoilDistance);
+    this.autoSubmit =
+      autoSubmit &&
+      settings.length === defaults.length &&
+      settings.speed === defaults.speed &&
+      settings.recoilDistance === defaults.recoilDistance;
   }
   reset(nowMs: number): void {
     this.motion.resetAt(this.maze.spawn.a, this.maze.spawn.angle);

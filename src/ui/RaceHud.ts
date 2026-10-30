@@ -1,3 +1,4 @@
+import type { Settings } from "../core/settings";
 import type { RaceStatus } from "../modes/maze/RaceSession";
 import type { MazeDefinition } from "../modes/maze/MazeDefinition";
 import type { Point } from "../core/SpinMotion";
@@ -20,11 +21,30 @@ export class RaceHud {
       openEditor: () => void;
       courseList: readonly MazeDefinition[];
       preview?: boolean;
+      editorPreview?: boolean;
+      customSettings?: boolean;
+      savedSettings?: Settings | null;
+      useSavedSettings: () => void;
+      standardSettings: () => void;
     },
   ) {
     this.preview = !!callbacks.preview;
-    root.innerHTML = `<div class="race-heading">${callbacks.preview ? "Essai du parcours" : "Contre-la-montre"}</div><h1 class="course-title"></h1><div class="race-clock"><span>Votre temps</span><strong class="timer">0.00 s</strong><span class="best"></span></div><p class="race-message" role="status"></p><form class="score-form" hidden><label>Votre nom<input name="player" maxlength="24" autocomplete="nickname" required></label><button class="primary" type="submit">Enregistrer le temps</button><button type="button" class="skip-name">Passer (Anonyme)</button></form><button class="restart primary">Recommencer</button><section class="podium"><h2>Les trois meilleurs temps</h2><ol></ol><small>Enregistrés dans ce navigateur</small></section><div class="course-list" aria-label="Choisir un parcours"></div><div class="course-overview" aria-label="Carte du parcours"></div><p class="race-rules"></p><button class="open-editor">${callbacks.preview ? "Retour à l’éditeur" : "Éditeur de parcours"}</button><button class="open-lab">Laboratoire</button>`;
+    root.innerHTML = `<div class="race-heading">${callbacks.customSettings ? "Essai des réglages" : callbacks.preview ? "Essai du parcours" : "Contre-la-montre"}</div><h1 class="course-title"></h1><div class="race-clock"><span>Votre temps</span><strong class="timer">0.00 s</strong><span class="best"></span></div><p class="race-message" role="status"></p><form class="score-form" hidden><label>Votre nom<input name="player" maxlength="24" autocomplete="nickname" required></label><button class="primary" type="submit">Enregistrer le temps</button><button type="button" class="skip-name">Passer (Anonyme)</button></form><button class="restart primary">Recommencer</button><button class="use-lab-settings">Tester les réglages enregistrés</button><button class="standard-settings">Revenir aux réglages standards</button><p class="settings-summary note"></p><p class="settings-notice note" role="status"></p><section class="podium"><h2>Les trois meilleurs temps</h2><ol></ol><small>Enregistrés dans ce navigateur</small></section><div class="course-list" aria-label="Choisir un parcours"></div><div class="course-overview" aria-label="Carte du parcours"></div><p class="race-rules"></p><button class="open-editor">${callbacks.editorPreview ? "Retour à l’éditeur" : "Éditeur de parcours"}</button><button class="open-lab">Laboratoire</button>`;
     const signal = this.controller.signal;
+    const saved = callbacks.savedSettings;
+    this.root.querySelector<HTMLButtonElement>(".use-lab-settings")!.disabled =
+      !saved;
+    this.root.querySelector<HTMLElement>(".standard-settings")!.hidden =
+      !callbacks.customSettings;
+    this.root.querySelector(".settings-summary")!.textContent = saved
+      ? `Réglages enregistrés : ${saved.speed} rad/s, barre ${saved.length} px, recul ${saved.recoilDistance} px, zoom ${saved.zoom}, lissage ${saved.smoothing} s. Trajectoire ${saved.trail ? "affichée" : "masquée"}.`
+      : "Enregistrez vos réglages dans le laboratoire pour les essayer ici.";
+    this.root
+      .querySelector(".use-lab-settings")!
+      .addEventListener("click", callbacks.useSavedSettings, { signal });
+    this.root
+      .querySelector(".standard-settings")!
+      .addEventListener("click", callbacks.standardSettings, { signal });
     root.querySelector(".restart")!.addEventListener(
       "click",
       () => {
@@ -77,6 +97,9 @@ export class RaceHud {
     root
       .querySelector(".skip-name")!
       .addEventListener("click", () => save("Anonyme"), { signal });
+  }
+  settingsNotice(message: string): void {
+    this.root.querySelector(".settings-notice")!.textContent = message;
   }
   setCourse(m: MazeDefinition): void {
     this.root.querySelector(".course-title")!.textContent = m.title;

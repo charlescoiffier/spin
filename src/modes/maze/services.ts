@@ -1,3 +1,4 @@
+import { LabSettingsStore } from "../../core/LabSettingsStore";
 import { RecordStore } from "./RecordStore";
 import { CourseStore } from "../../editor/CourseStore";
 let records: RecordStore | undefined, custom: CourseStore | undefined;
@@ -13,4 +14,9 @@ export function getRecords(): RecordStore {
 }
 export function getCourseStore(): CourseStore {
   return (custom ??= new CourseStore(storage()));
+}
+
+let labSettings: LabSettingsStore | undefined;
+export function getLabSettingsStore(): LabSettingsStore {
+  return (labSettings ??= new LabSettingsStore(storage()));
 }

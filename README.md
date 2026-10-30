@@ -88,6 +88,17 @@ Le laboratoire conserve le quadrillage, des repères et les réglages libres :
 | Lissage caméra    | 0,3 s                   | 0 à 1,5 s              |
 | Recul             | 8 px                    | **0 à 100 px**         |
 
+**Enregistrer ces réglages** conserve le jeu de paramètres courant dans ce navigateur.
+**Enregistrer et tester en parcours** l’applique directement à une partie d’essai.
+Les réglages enregistrés sont aussi accessibles depuis les parcours avec
+**Tester les réglages enregistrés** et survivent au rechargement de la page.
+Le bouton **Revenir aux réglages standards** rétablit les règles du classement.
+Les essais avec ces paramètres sont chronométrés mais sans podium ; une barre
+qui touche un mur au départ ou ne peut pas tenir dans l’arrivée est signalée.
+La réinitialisation du laboratoire ne remplace la sauvegarde que si vous
+choisissez de l’enregistrer à nouveau. Si le stockage est refusé, les réglages
+restent disponibles pour la session.
+
 Le recul dure 80 ms ; zéro supprime sa translation et conserve le rebond.
 Un changement de recul s’applique au prochain choc, sans saut pendant un recul
 engagé. La caméra ne modifie jamais les coordonnées du monde. Une longueur qui

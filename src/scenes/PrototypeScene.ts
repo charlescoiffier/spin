@@ -9,10 +9,11 @@ import { CollisionMotion } from "../collision/CollisionMotion";
 import { FixedStepper } from "../core/FixedStepper";
 import { getContacts } from "../collision/geometry";
 import { DebugPanel } from "../debug/DebugPanel";
+import { getLabSettingsStore } from "../modes/maze/services";
 import { showPanel } from "../ui/appShell";
 export class PrototypeScene extends Phaser.Scene {
-  private motion = new SpinMotion(defaults.length, defaults.speed);
-  private settings = { ...defaults };
+  private settings = getLabSettingsStore().get() ?? { ...defaults };
+  private motion = new SpinMotion(this.settings.length, this.settings.speed);
   private spinView!: SpinRenderer;
   private follow!: PivotCamera;
   private collisions!: CollisionMotion;
@@ -78,7 +79,26 @@ export class PrototypeScene extends Phaser.Scene {
     editor.addEventListener("click", () => this.scene.start("editor", {}), {
       once: true,
     });
-    document.getElementById("debug")!.append(editor, back);
+    const save = document.createElement("button");
+    save.textContent = "Enregistrer ces réglages";
+    const test = document.createElement("button");
+    test.textContent = "Enregistrer et tester en parcours";
+    test.className = "primary";
+    const notice = document.createElement("p");
+    notice.className = "note";
+    notice.setAttribute("role", "status");
+    const persist = () => {
+      const saved = getLabSettingsStore().save(this.settings);
+      notice.textContent = getLabSettingsStore().persisted
+        ? "Réglages enregistrés dans ce navigateur."
+        : "Réglages conservés pour cette session (stockage indisponible).";
+      return saved;
+    };
+    save.addEventListener("click", persist);
+    test.addEventListener("click", () =>
+      this.scene.start("maze", { labSettings: persist() }),
+    );
+    document.getElementById("debug")!.append(save, test, notice, editor, back);
     this.events.once("shutdown", () => {
       controls.destroy();
       this.panel.destroy();
