@@ -4,11 +4,19 @@ import { getContacts, type Contact, type Wall } from "./geometry";
 /** Collision response wraps pure kinematics. All proposals are checked before commit. */
 export class CollisionMotion {
   private locked = new Set<string>();
-  private recoil: { normal: Point; age: number } | null = null;
+  private recoilDistance = 8;
+  private recoil: { normal: Point; age: number; distance: number } | null =
+    null;
   constructor(
     private motion: SpinMotion,
     private walls: readonly Wall[],
   ) {}
+  setRecoilDistance(distance: number): void {
+    if (!Number.isFinite(distance) || distance < 0 || distance > 40) {
+      throw new RangeError("Le recul doit être compris entre 0 et 40 px");
+    }
+    this.recoilDistance = distance;
+  }
   reset(): void {
     this.locked.clear();
     this.recoil = null;
@@ -54,6 +62,7 @@ export class CollisionMotion {
     const candidates = [sum, ...fresh.map((c) => c.normal)];
     const state = this.motion.snapshot();
     this.recoil = null;
+    if (this.recoilDistance === 0) return;
     for (const candidate of candidates) {
       const length = Math.hypot(candidate.x, candidate.y);
       if (length < 1e-8) continue;
@@ -62,7 +71,7 @@ export class CollisionMotion {
       const free = !this.contacts().length;
       this.motion.restore(state);
       if (free) {
-        this.recoil = { normal, age: 0 };
+        this.recoil = { normal, age: 0, distance: this.recoilDistance };
         break;
       }
     }
@@ -75,7 +84,8 @@ export class CollisionMotion {
       const recoil = this.recoil,
         end = Math.min(0.08, recoil.age + seconds);
       const distance =
-        8 * (Math.pow(1 - recoil.age / 0.08, 2) - Math.pow(1 - end / 0.08, 2));
+        recoil.distance *
+        (Math.pow(1 - recoil.age / 0.08, 2) - Math.pow(1 - end / 0.08, 2));
       const hits = this.safeMove((f) =>
         this.motion.translate({
           x: recoil.normal.x * distance * f,

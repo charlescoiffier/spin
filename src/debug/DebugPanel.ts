@@ -24,6 +24,7 @@ export class DebugPanel {
       ["length", "Longueur de barre", 60, 280, 1, "px"],
       ["zoom", "Zoom caméra", 0.4, 2, 0.05, "×"],
       ["smoothing", "Lissage caméra", 0, 1.5, 0.05, "s"],
+      ["recoilDistance", "Distance de recul", 0, 40, 1, "px"],
     ];
     ranges.forEach(([key, title, min, max, step, unit]) => {
       const label = document.createElement("label");

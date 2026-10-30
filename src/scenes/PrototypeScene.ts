@@ -25,10 +25,11 @@ export class PrototypeScene extends Phaser.Scene {
     document.getElementById("debug")!.hidden = false;
     document.getElementById("race-ui")!.hidden = true;
     document.querySelector(".hint")!.textContent =
-      "CLIQUEZ OU TOUCHEZ POUR CHANGER DE PIVOT";
+      "CLIC, TOUCHER OU ESPACE · CHANGER DE PIVOT";
     document.querySelector("header small")!.textContent = "LAB / 0.1";
     const walls = createTestEnvironment(this);
     this.collisions = new CollisionMotion(this.motion, walls);
+    this.collisions.setRecoilDistance(this.settings.recoilDistance);
     this.stepper.reset(performance.now());
     this.spinView = new SpinRenderer(this);
     this.follow = new PivotCamera(this.cameras.main);
@@ -40,6 +41,7 @@ export class PrototypeScene extends Phaser.Scene {
       this.motion.angularSpeed = this.settings.speed;
       this.motion.setLength(this.settings.length);
       this.motion.reset();
+      this.collisions.setRecoilDistance(this.settings.recoilDistance);
       this.collisions.reset();
       this.stepper.reset(performance.now());
       this.spinView.clearTrail();
@@ -49,6 +51,8 @@ export class PrototypeScene extends Phaser.Scene {
       document.getElementById("debug")!,
       this.settings,
       (key) => {
+        if (key === "recoilDistance")
+          this.collisions.setRecoilDistance(this.settings.recoilDistance);
         if (key === "speed") this.motion.angularSpeed = this.settings.speed;
         if (key === "length") {
           const before = this.motion.snapshot();

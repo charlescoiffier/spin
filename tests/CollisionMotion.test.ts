@@ -120,3 +120,50 @@ test("séparation puis nouveau contact réarme le rebond", () => {
   }
   assert.ok(second);
 });
+
+test("la distance de recul est réglable et zéro désactive uniquement la translation", () => {
+  for (const distance of [0, 4, 20, 40]) {
+    const m = new SpinMotion(80, 5);
+    const c = new CollisionMotion(m, [floor]);
+    c.setRecoilDistance(distance);
+    for (let i = 0; i < 200 && m.direction === 1; i++) c.step(dt);
+    assert.equal(m.direction, -1);
+    const pivot = { ...m.pivotPosition };
+    m.angularSpeed = 0;
+    for (let i = 0; i < 20; i++) c.step(dt);
+    assert.ok(
+      Math.abs(
+        Math.hypot(m.pivotPosition.x - pivot.x, m.pivotPosition.y - pivot.y) -
+          distance,
+      ) < 1e-7,
+    );
+    assert.equal(m.pivot, "A");
+    free(m, [floor]);
+  }
+});
+test("modifier le recul en cours de rebond ne crée pas de saut", () => {
+  const m = new SpinMotion(80, 5),
+    c = new CollisionMotion(m, [floor]);
+  for (let i = 0; i < 200 && m.direction === 1; i++) c.step(dt);
+  const atImpact = { ...m.pivotPosition };
+  c.step(dt);
+  const before = m.snapshot();
+  c.setRecoilDistance(30);
+  assert.deepEqual(m.snapshot(), before);
+  m.angularSpeed = 0;
+  for (let i = 0; i < 20; i++) c.step(dt);
+  assert.ok(Math.abs(Math.hypot(m.pivotPosition.x - atImpact.x, m.pivotPosition.y - atImpact.y) - 8) < 1e-7);
+  assert.throws(() => c.setRecoilDistance(-1));
+  assert.throws(() => c.setRecoilDistance(Infinity));
+});
+
+test("le recul maximal reste bloqué par les murs opposés", () => {
+  const walls = [floor, { id: "opposite", x: -300, y: -45, width: 600, height: 24 }];
+  const m = new SpinMotion(80, 5), c = new CollisionMotion(m, walls);
+  c.setRecoilDistance(40);
+  for (let i = 0; i < 1200; i++) {
+    if (i % 43 === 0) m.switchPivot();
+    c.step(dt);
+    free(m, walls);
+  }
+});

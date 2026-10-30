@@ -3,6 +3,7 @@ export const defaults = {
   length: 80,
   zoom: 0.7,
   smoothing: 0.3,
+  recoilDistance: 8,
   trail: true,
 };
 export type Settings = typeof defaults;

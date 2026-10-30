@@ -9,9 +9,9 @@ mécanique de déplacement de _Twin Spin_ (GlobZ).
 
 ## Jouer
 
-- Touchez le terrain ou cliquez avec le bouton principal : le pivot change et
+- Touchez le terrain, cliquez avec le bouton principal ou appuyez sur **espace** : le pivot change et
   le sens de rotation s’inverse, sans saut de position.
-- Le premier toucher démarre la course et exécute ce même geste.
+- Le premier geste (toucher, clic ou espace) démarre la course. Un appui maintenu sur espace ne produit qu’un geste ; les contrôles d’interface gardent leur comportement clavier habituel.
 - Les murs réagissent aux deux boules **et à la barre** : ils inversent la rotation
   et repoussent légèrement l’ensemble, en conservant le pivot actif et la longueur.
 - Aucun supplément de temps ni retour au départ lors d’un choc.
@@ -46,9 +46,12 @@ est séparé de l’interface de course. **Jouer aux labyrinthes** permet de rev
 | Longueur de barre | 80 px                                      |
 | Zoom caméra       | 0,7                                        |
 | Lissage caméra    | 0,3 s                                      |
+| Distance de recul | 8 px (0 à 40 px au laboratoire) |
 
-Au laboratoire, les réglages s’appliquent immédiatement. Modifier la longueur
-conserve le pivot et déplace la boule mobile ; une valeur qui placerait la barre
+Au laboratoire, les réglages s’appliquent immédiatement. La distance de recul
+s’applique au prochain choc, sans modifier un recul déjà engagé ; zéro conserve
+l’inversion de rotation mais désactive la translation. La durée reste de 80 ms.
+Modifier la longueur conserve le pivot et déplace la boule mobile ; une valeur qui placerait la barre
 ou une boule dans un mur est refusée. La réinitialisation remet les réglages par
 défaut, les positions, la trajectoire et la caméra.
 

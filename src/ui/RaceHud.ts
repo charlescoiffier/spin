@@ -20,7 +20,7 @@ export class RaceHud {
       openLab: () => void;
     },
   ) {
-    root.innerHTML = `<div class="race-heading">Contre-la-montre</div><h1 class="course-title"></h1><div class="race-clock"><span>Votre temps</span><strong class="timer">0.00 s</strong><span class="best"></span></div><p class="race-message" role="status"></p><button class="restart primary">Recommencer</button><div class="course-list" aria-label="Choisir un parcours"></div><div class="course-overview" aria-label="Carte du parcours"></div><p class="race-rules">Touchez pour changer de pivot.<br>Les murs vous font rebondir.<br>Amenez les deux boules dans la sortie.</p><button class="open-lab">Ouvrir le laboratoire</button>`;
+    root.innerHTML = `<div class="race-heading">Contre-la-montre</div><h1 class="course-title"></h1><div class="race-clock"><span>Votre temps</span><strong class="timer">0.00 s</strong><span class="best"></span></div><p class="race-message" role="status"></p><button class="restart primary">Recommencer</button><div class="course-list" aria-label="Choisir un parcours"></div><div class="course-overview" aria-label="Carte du parcours"></div><p class="race-rules">Clic, toucher ou espace pour changer de pivot.<br>Les murs vous font rebondir.<br>Amenez les deux boules dans la sortie.</p><button class="open-lab">Ouvrir le laboratoire</button>`;
     this.timer = root.querySelector(".timer")!;
     this.best = root.querySelector(".best")!;
     this.message = root.querySelector(".race-message")!;
@@ -80,7 +80,7 @@ export class RaceHud {
     if (this.lastStatus !== view.status) {
       this.lastStatus = view.status;
       this.message.textContent = {
-        ready: "Touchez le terrain pour démarrer.",
+        ready: "Touchez le terrain ou appuyez sur espace pour démarrer.",
         running: "Rejoignez la zone menthe.",
         finished: "Arrivée ! Rejouez pour améliorer votre temps.",
         interrupted: "Tentative interrompue. Recommencez pour un temps valide.",

@@ -42,7 +42,7 @@ export class MazeScene extends Phaser.Scene {
     const root = document.getElementById("race-ui")!;
     root.hidden = false;
     document.querySelector(".hint")!.textContent =
-      "UN TOUCHER · UN NOUVEAU POINT D’ANCRAGE";
+      "CLIC, TOUCHER OU ESPACE · UN NOUVEAU PIVOT";
     document.querySelector("header small")!.textContent = "MAZE / 0.1";
     this.run = new MazeRun(maze, getRecords());
     new MazeRenderer(this, maze);
