@@ -10,7 +10,8 @@ _Twin Spin_ (GlobZ), avec un éditeur visuel dans le navigateur.
 
 Un clic, un toucher du terrain ou un appui sur **espace** échange le pivot et
 inverse la rotation. L’appui maintenu sur espace ne répète pas le geste ; la
-saisie et les boutons gardent leur fonctionnement clavier habituel.
+saisie de texte (notamment le nom du joueur) conserve les espaces. Hors saisie,
+espace déclenche le spin même lorsqu’un bouton ou un réglage possède le focus.
 Le premier geste démarre le chronomètre.
 
 Les murs font rebondir les deux boules et la barre : rotation inversée,

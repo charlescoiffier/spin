@@ -28,15 +28,50 @@ test("espace déclenche une action, empêche le défilement et ignore la répét
   press(target);
   assert.equal(count, 1);
 });
-test("les raccourcis modifiés et les contrôles DOM conservent leur comportement", () => {
+test("les raccourcis modifiés et les champs de texte conservent leur comportement", () => {
   const target = new EventTarget();
   let count = 0;
   const controls = new SpaceControls(target, () => count++);
   for (const key of ["altKey", "ctrlKey", "metaKey", "shiftKey"])
     assert.equal(press(target, { [key]: true }).defaultPrevented, false);
   // EventTarget represents the focused control without requiring a DOM emulator.
-  Object.assign(target, { closest: () => ({ tagName: "INPUT" }) });
+  Object.assign(target, { tagName: "INPUT", type: "text" });
   assert.equal(press(target).defaultPrevented, false);
   assert.equal(count, 0);
   controls.destroy();
+});
+
+test("espace reste actif avec le focus sur les boutons et réglages", () => {
+  for (const properties of [
+    { tagName: "BUTTON" },
+    { tagName: "A" },
+    { tagName: "SELECT" },
+    { tagName: "INPUT", type: "range" },
+    { tagName: "INPUT", type: "checkbox" },
+    { tagName: "INPUT", type: "number" },
+  ]) {
+    const target = Object.assign(new EventTarget(), properties);
+    Object.assign(target, { closest: () => target });
+    let count = 0;
+    const controls = new SpaceControls(target, () => count++);
+    assert.ok(press(target).defaultPrevented);
+    assert.equal(count, 1);
+    assert.ok(press(target, { repeat: true }).defaultPrevented);
+    assert.equal(count, 1);
+    controls.destroy();
+  }
+});
+test("la saisie du nom et les zones éditables acceptent les espaces", () => {
+  for (const properties of [
+    { tagName: "INPUT", type: "text" },
+    { tagName: "TEXTAREA" },
+    { tagName: "SPAN", isContentEditable: true },
+  ]) {
+    const target = Object.assign(new EventTarget(), properties);
+    let count = 0;
+    const controls = new SpaceControls(target, () => count++);
+    assert.equal(press(target).defaultPrevented, false);
+    assert.equal(count, 0);
+    controls.destroy();
+  }
 });
