@@ -9,6 +9,7 @@ import { CollisionMotion } from "../collision/CollisionMotion";
 import { FixedStepper } from "../core/FixedStepper";
 import { getContacts } from "../collision/geometry";
 import { DebugPanel } from "../debug/DebugPanel";
+import { showPanel } from "../ui/appShell";
 export class PrototypeScene extends Phaser.Scene {
   private motion = new SpinMotion(defaults.length, defaults.speed);
   private settings = { ...defaults };
@@ -21,12 +22,8 @@ export class PrototypeScene extends Phaser.Scene {
     super("prototype");
   }
   create(): void {
-    document.getElementById("app")!.classList.remove("race-mode");
-    document.getElementById("debug")!.hidden = false;
-    document.getElementById("race-ui")!.hidden = true;
-    document.querySelector(".hint")!.textContent =
-      "CLIC, TOUCHER OU ESPACE · CHANGER DE PIVOT";
-    document.querySelector("header small")!.textContent = "LAB / 0.1";
+    showPanel("debug", "Laboratoire");
+    this.cameras.main.setBackgroundColor("#101820");
     const walls = createTestEnvironment(this);
     this.collisions = new CollisionMotion(this.motion, walls);
     this.collisions.setRecoilDistance(this.settings.recoilDistance);
@@ -73,10 +70,15 @@ export class PrototypeScene extends Phaser.Scene {
     );
     const back = document.createElement("button");
     back.textContent = "Jouer aux labyrinthes";
-    back.addEventListener("click", () => this.scene.start("maze"), {
+    back.addEventListener("click", () => this.scene.start("maze", {}), {
       once: true,
     });
-    document.getElementById("debug")!.append(back);
+    const editor = document.createElement("button");
+    editor.textContent = "Éditeur de parcours";
+    editor.addEventListener("click", () => this.scene.start("editor", {}), {
+      once: true,
+    });
+    document.getElementById("debug")!.append(editor, back);
     this.events.once("shutdown", () => {
       controls.destroy();
       this.panel.destroy();

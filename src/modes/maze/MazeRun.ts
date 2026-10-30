@@ -1,7 +1,7 @@
 import { SpinMotion } from "../../core/SpinMotion";
 import { FixedStepper } from "../../core/FixedStepper";
 import { CollisionMotion } from "../../collision/CollisionMotion";
-import { containsDisk } from "../../collision/geometry";
+import { finishReached } from "./finishReached";
 import { RaceSession } from "./RaceSession";
 import { type MazeDefinition, validateMaze } from "./MazeDefinition";
 import type { RecordStore } from "./RecordStore";
@@ -13,6 +13,7 @@ export class MazeRun {
   constructor(
     readonly maze: MazeDefinition,
     private records: RecordStore,
+    private autoSubmit = true,
   ) {
     const errors = validateMaze(maze);
     if (errors.length) throw Error(errors.join("; "));
@@ -40,13 +41,19 @@ export class MazeRun {
       },
       (dt, stepTime) => {
         if (this.session.status !== "running") return;
+        const previousPivot = { ...this.motion.pivotPosition };
         this.collisions.step(dt);
         if (
-          containsDisk(this.maze.exit, this.motion.a, 17) &&
-          containsDisk(this.maze.exit, this.motion.b, 17)
+          finishReached(
+            this.maze,
+            this.motion,
+            previousPivot,
+            this.collisions.isRecoiling,
+          )
         ) {
           this.session.finish(stepTime);
-          this.records.submit(this.maze, this.session.elapsedMs(stepTime));
+          if (this.autoSubmit)
+            this.records.submit(this.maze, this.session.elapsedMs(stepTime));
         }
       },
     );

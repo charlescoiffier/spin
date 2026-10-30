@@ -12,8 +12,8 @@ export class CollisionMotion {
     private walls: readonly Wall[],
   ) {}
   setRecoilDistance(distance: number): void {
-    if (!Number.isFinite(distance) || distance < 0 || distance > 40) {
-      throw new RangeError("Le recul doit être compris entre 0 et 40 px");
+    if (!Number.isFinite(distance) || distance < 0 || distance > 100) {
+      throw new RangeError("Le recul doit être compris entre 0 et 100 px");
     }
     this.recoilDistance = distance;
   }
@@ -76,7 +76,19 @@ export class CollisionMotion {
       }
     }
   }
+  get isRecoiling(): boolean {
+    return this.recoil !== null;
+  }
   step(seconds: number): void {
+    // Keep both recoil and rotation proposals shorter than wall thickness.
+    const pieces = Math.max(
+      1,
+      Math.ceil(seconds / (1 / 240)),
+      Math.ceil((this.recoilDistance * 2 * seconds) / 0.08 / 2),
+    );
+    for (let i = 0; i < pieces; i++) this.substep(seconds / pieces);
+  }
+  private substep(seconds: number): void {
     // Unlock only after genuine separation, never through a timed immunity window.
     const nearby = new Set(this.contacts(1).map((c) => c.wallId));
     for (const id of this.locked) if (!nearby.has(id)) this.locked.delete(id);

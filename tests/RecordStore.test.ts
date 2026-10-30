@@ -46,3 +46,30 @@ test("valeurs invalides et stockage indisponible restent non bloquants", () => {
   assert.throws(() => s.submit(maze, Infinity));
   assert.equal(new RecordStore(null).submit(maze, 120).bestMs, 120);
 });
+
+test("podium trié limité à trois noms, égalités stables et migration", () => {
+  const mem = storage(),
+    s = new RecordStore(mem);
+  assert.ok(s.qualifies(maze, 1500));
+  s.submitNamed(maze, 1500, " Alice ");
+  s.submitNamed(maze, 1200, "Bob");
+  s.submitNamed(maze, 1800, "Chloé");
+  assert.equal(s.qualifies(maze, 1800), false);
+  s.submitNamed(maze, 1300, "Denis");
+  assert.deepEqual(
+    s.top(maze).map((e) => [e.name, e.timeMs]),
+    [
+      ["Bob", 1200],
+      ["Denis", 1300],
+      ["Alice", 1500],
+    ],
+  );
+  assert.deepEqual(new RecordStore(mem).top(maze), s.top(maze));
+  assert.throws(() => s.submitNamed(maze, 1000, "  "));
+  const legacy = new RecordStore({
+    getItem: (k) => (k.includes("rules-v1") ? "900" : null),
+    setItem: () => {},
+  });
+  assert.equal(legacy.top(maze)[0].name, "Anonyme");
+  assert.equal(legacy.get(maze), 900);
+});

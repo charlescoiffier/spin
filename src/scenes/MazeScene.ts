@@ -1,50 +1,45 @@
 import Phaser from "phaser";
 import { MazeRun } from "../modes/maze/MazeRun";
-import { RecordStore } from "../modes/maze/RecordStore";
 import { courses } from "../modes/maze/courses";
+import type { MazeDefinition } from "../modes/maze/MazeDefinition";
 import { MazeRenderer } from "../rendering/MazeRenderer";
 import { SpinRenderer } from "../rendering/SpinRenderer";
 import { PivotCamera } from "../camera/PivotCamera";
 import { PointerControls } from "../input/PointerControls";
 import { RaceHud } from "../ui/RaceHud";
-
-// One store per browser session: memory fallback survives scene changes and retries.
-let records: RecordStore | undefined;
-function getRecords(): RecordStore {
-  if (!records) {
-    let storage: Storage | null = null;
-    try {
-      storage = window.localStorage;
-    } catch {
-      /* memory only */
-    }
-    records = new RecordStore(storage);
-  }
-  return records;
-}
+import { showPanel } from "../ui/appShell";
+import { getRecords, getCourseStore } from "../modes/maze/services";
+import { EditorDocument } from "../editor/EditorDocument";
 export class MazeScene extends Phaser.Scene {
   private courseId = courses[0].id;
+  private custom?: MazeDefinition;
+  private editor?: EditorDocument;
   private run!: MazeRun;
   private spinView!: SpinRenderer;
   private follow!: PivotCamera;
   private hud!: RaceHud;
-  private bestMs: number | null = null;
+  private finished = false;
   constructor() {
     super("maze");
   }
-  init(data: { courseId?: string } = {}): void {
+  init(
+    data: {
+      courseId?: string;
+      course?: MazeDefinition;
+      editor?: EditorDocument;
+    } = {},
+  ): void {
     this.courseId = data.courseId ?? courses[0].id;
+    this.custom = data.course;
+    this.editor = data.editor;
+    this.finished = false;
   }
   create(): void {
-    const maze = courses.find((c) => c.id === this.courseId) ?? courses[0];
-    document.getElementById("app")!.classList.add("race-mode");
-    document.getElementById("debug")!.hidden = true;
-    const root = document.getElementById("race-ui")!;
-    root.hidden = false;
-    document.querySelector(".hint")!.textContent =
-      "CLIC, TOUCHER OU ESPACE · UN NOUVEAU PIVOT";
-    document.querySelector("header small")!.textContent = "MAZE / 0.1";
-    this.run = new MazeRun(maze, getRecords());
+    const list = [...courses, ...getCourseStore().list()],
+      maze =
+        this.custom ?? list.find((c) => c.id === this.courseId) ?? courses[0],
+      root = showPanel("race-ui", this.editor ? "Essai" : "Parcours");
+    this.run = new MazeRun(maze, getRecords(), false);
     new MazeRenderer(this, maze);
     this.spinView = new SpinRenderer(this);
     this.follow = new PivotCamera(this.cameras.main);
@@ -52,15 +47,22 @@ export class MazeScene extends Phaser.Scene {
       this.run.reset(performance.now());
       this.spinView.clearTrail();
       this.follow.reset(this.run.motion.pivotPosition);
-      this.bestMs = getRecords().get(maze);
+      this.finished = false;
     };
     restart();
     this.hud = new RaceHud(root, {
       restart,
       selectCourse: (id) => this.scene.restart({ courseId: id }),
-      openLab: () => this.scene.start("prototype"),
+      openLab: () => this.scene.start("prototype", {}),
+      openEditor: () =>
+        this.scene.start("editor", {
+          document: this.editor ?? new EditorDocument(maze),
+        }),
+      courseList: this.editor ? [] : list,
+      preview: !!this.editor,
     });
     this.hud.setCourse(maze);
+    this.hud.setPodium(getRecords().top(maze));
     const controls = new PointerControls(this, () =>
       this.run.press(performance.now()),
     );
@@ -86,14 +88,16 @@ export class MazeScene extends Phaser.Scene {
       s = this.run.session;
     this.follow.update(m.pivotPosition, dt, 0.3, 0.7);
     this.spinView.draw(m, true, dt);
-    if (s.status === "finished" && this.bestMs !== s.elapsedMs(now))
-      this.bestMs = getRecords().get(this.run.maze);
-    this.hud.update({
-      status: s.status,
-      elapsedMs: s.elapsedMs(now),
-      bestMs: this.bestMs,
-      courseTitle: this.run.maze.title,
-    });
+    this.hud.update({ status: s.status, elapsedMs: s.elapsedMs(now) });
     this.hud.updatePosition({ x: (m.a.x + m.b.x) / 2, y: (m.a.y + m.b.y) / 2 });
+    if (s.status === "finished" && !this.finished) {
+      this.finished = true;
+      const time = s.elapsedMs(now);
+      if (!this.editor && getRecords().qualifies(this.run.maze, time))
+        this.hud.requestName((name) => {
+          getRecords().submitNamed(this.run.maze, time, name);
+          this.hud.setPodium(getRecords().top(this.run.maze));
+        });
+    }
   }
 }

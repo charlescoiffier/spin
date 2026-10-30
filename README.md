@@ -1,68 +1,101 @@
-# SPIN — Labyrinthes contre-la-montre · v0.1
+# SPIN — Parcours et éditeur intégré
 
-Deux boules reliées par une barre, un seul geste : changez de pivot pour rejoindre
-la sortie le plus rapidement possible. Un prototype d’arcade 2D inspiré de la
-mécanique de déplacement de _Twin Spin_ (GlobZ).
+Un jeu d’arcade 2D de parcours contre-la-montre, inspiré de la mécanique de
+_Twin Spin_ (GlobZ), avec un éditeur visuel dans le navigateur.
 
-**[Jouer dans le navigateur](https://charlescoiffier.github.io/spin/)** ·
+**[Jouer et créer un parcours](https://charlescoiffier.github.io/spin/)** ·
 [Code source](https://github.com/charlescoiffier/spin)
 
 ## Jouer
 
-- Touchez le terrain, cliquez avec le bouton principal ou appuyez sur **espace** : le pivot change et
-  le sens de rotation s’inverse, sans saut de position.
-- Le premier geste (toucher, clic ou espace) démarre la course. Un appui maintenu sur espace ne produit qu’un geste ; les contrôles d’interface gardent leur comportement clavier habituel.
-- Les murs réagissent aux deux boules **et à la barre** : ils inversent la rotation
-  et repoussent légèrement l’ensemble, en conservant le pivot actif et la longueur.
-- Aucun supplément de temps ni retour au départ lors d’un choc.
-- Placez les **deux boules entièrement dans la zone menthe** pour terminer.
-- Recommencez pour améliorer votre record, enregistré localement par parcours.
-- Les boutons des trois parcours sont accessibles dès le départ. La petite carte
-  montre votre position en abricot et la sortie en menthe.
+Un clic, un toucher du terrain ou un appui sur **espace** échange le pivot et
+inverse la rotation. L’appui maintenu sur espace ne répète pas le geste ; la
+saisie et les boutons gardent leur fonctionnement clavier habituel.
+Le premier geste démarre le chronomètre.
 
-### Trois parcours
+Les murs font rebondir les deux boules et la barre : rotation inversée,
+pivot conservé, léger recul progressif de l’ensemble. Aucun supplément de temps
+ni retour au départ. Les murs jointifs ou superposés forment une silhouette
+continue : les arêtes internes ne sont pas dessinées.
 
-| Parcours       | Principe                                                    |
-| -------------- | ----------------------------------------------------------- |
-| Le détour      | Apprendre à contourner un mur et négocier de larges virages |
-| Les lacets     | Enchaîner les changements de direction                      |
-| La bifurcation | Choisir un chemin autour de l’îlot central                  |
+Trois parcours sont fournis : **Le détour**, **Les lacets**, **La bifurcation**.
+Les parcours enregistrés dans l’éditeur rejoignent cette liste.
 
-Le passage en arrière-plan interrompt une tentative. Une pause de calcul de plus
-de 250 ms l’interrompt également : il faut recommencer pour obtenir un temps valide.
-Le chronomètre utilise une horloge monotone, avec affichage au centième et
-résolution de simulation d’environ 4,17 ms. Les records ne sont ni partagés ni
-synchronisés ; si le stockage est refusé, ils sont conservés pour la session.
+Chaque parcours choisit sa condition d’arrivée :
 
-## Laboratoire
+- **Une boule pivot immobile** : le disque du pivot entièrement dans la zone,
+  sans translation de recul en cours. Un geste permet d’immobiliser l’autre boule.
+- **L’ensemble dans la zone** : les deux disques entièrement à l’intérieur.
+- **Cible à toucher** : contact d’une boule ou de la barre avec la cible ; il
+  s’agit d’un contact du personnage, pas d’un clic sur la cible.
 
-Le bouton **Ouvrir le laboratoire** donne accès aux réglages libres, au quadrillage,
-aux repères et à quelques murs pour observer les rebonds. Le panneau de débogage
-est séparé de l’interface de course. **Jouer aux labyrinthes** permet de revenir.
+Le passage en arrière-plan ou une interruption de calcul de plus de 250 ms
+invalide la tentative. Recommencer rétablit le départ et remet le temps à zéro.
+Le chronomètre est monotone, affiché au centième et calculé à environ 4,17 ms près.
 
-| Paramètre         | Valeur par défaut et valeur fixe en course |
-| ----------------- | ------------------------------------------ |
-| Vitesse angulaire | 5 rad/s                                    |
-| Longueur de barre | 80 px                                      |
-| Zoom caméra       | 0,7                                        |
-| Lissage caméra    | 0,3 s                                      |
-| Distance de recul | 8 px (0 à 40 px au laboratoire) |
+## Podium
 
-Au laboratoire, les réglages s’appliquent immédiatement. La distance de recul
-s’applique au prochain choc, sans modifier un recul déjà engagé ; zéro conserve
-l’inversion de rotation mais désactive la translation. La durée reste de 80 ms.
-Modifier la longueur conserve le pivot et déplace la boule mobile ; une valeur qui placerait la barre
-ou une boule dans un mur est refusée. La réinitialisation remet les réglages par
-défaut, les positions, la trajectoire et la caméra.
+Les **trois meilleurs temps** sont affichés par parcours et version. À l’entrée
+dans ce classement, le jeu demande un nom (24 caractères maximum) ; **Passer**
+enregistre le temps sous « Anonyme ». Les égalités gardent l’ordre d’enregistrement.
+Les anciens records sont conservés sous « Anonyme ».
 
-Le lissage caméra est une constante de temps : environ 63 % du recentrage est
-effectué après cette durée, zéro donnant un suivi immédiat. La caméra ne modifie
-jamais les positions du monde. Le sens de rotation utilise le repère écran (Y vers
-le bas). La trajectoire représente le centre de la barre et conserve 1200 points.
+Parcours et résultats restent dans **ce navigateur**, sans compte ni classement
+en ligne. Si le stockage est refusé, ils restent disponibles pour la session.
 
-## Installation et développement
+## Éditeur de parcours
 
-Phaser 3 + TypeScript strict + Vite, sans moteur physique ni serveur de jeu.
+Ouvrez **Éditeur de parcours** depuis la course ou le laboratoire.
+
+1. Choisissez un parcours existant ou **Nouveau parcours**.
+2. **Dessiner un mur** : glissez sur le terrain ; un clic crée un bloc de 80 px.
+   Les coordonnées sont aimantées sur une grille de 20 px.
+3. **Sélection** : cliquez un mur ou l’arrivée, puis glissez pour le déplacer.
+   Le panneau permet de modifier largeur/hauteur et de supprimer un mur.
+4. Placez le départ et son orientation, puis l’arrivée et sa condition.
+5. Dans **Couleurs du décor**, choisissez fond, quadrillage, remplissage et
+   contours des blocs, remplissage et contour d’arrivée, couleur du départ.
+   La palette s’applique au parcours entier, y compris aux blocs contigus.
+6. **Tester le parcours** lance un essai avec retour à l’éditeur, sans modifier
+   le podium. Le document et son historique restent disponibles au retour.
+7. **Enregistrer le parcours** le conserve localement ; **Exporter JSON** et
+   **Importer JSON** permettent de le partager ou de le sauvegarder en fichier.
+
+**Annuler/Rétablir**, **Cadrer**, le zoom et l’outil **Déplacer la vue** facilitent
+l’édition. La molette zoome ; le bouton central de souris déplace aussi la vue.
+Le surlignage orange identifie l’élément sélectionné uniquement pendant l’édition.
+
+La validation refuse notamment un départ ou une arrivée dans un mur, les données
+invalides et les arrivées trop petites. Limites : 128 murs, 40 parcours locaux,
+coordonnées ±8000, fichier importé de 1 Mo maximum. Elle ne garantit pas la
+traversabilité : testez les passages avec le personnage. Un changement de tracé,
+de départ ou de condition d’arrivée crée une nouvelle version pour les scores ;
+changer uniquement les couleurs ou le titre conserve le podium.
+
+## Interface et laboratoire
+
+**Masquer le panneau / Afficher le panneau** replie les contrôles et agrandit
+le terrain. Le titre occupe 44 px. L’interface s’adapte au portrait et au paysage.
+
+Le laboratoire conserve le quadrillage, des repères et les réglages libres :
+
+| Paramètre         | Défaut (fixe en course) | Réglage au laboratoire |
+| ----------------- | ----------------------- | ---------------------- |
+| Vitesse angulaire | 5 rad/s                 | 0 à 6 rad/s            |
+| Barre             | 80 px                   | 60 à 280 px            |
+| Zoom              | 0,7                     | 0,4 à 2                |
+| Lissage caméra    | 0,3 s                   | 0 à 1,5 s              |
+| Recul             | 8 px                    | **0 à 100 px**         |
+
+Le recul dure 80 ms ; zéro supprime sa translation et conserve le rebond.
+Un changement de recul s’applique au prochain choc, sans saut pendant un recul
+engagé. La caméra ne modifie jamais les coordonnées du monde. Une longueur qui
+placerait le personnage dans un mur est refusée. La réinitialisation restaure
+les valeurs ci-dessus. La trajectoire représente le centre de la barre.
+
+## Développement
+
+Phaser 3, TypeScript strict, Vite, sans moteur physique ni serveur de jeu.
 Node.js 22.12+ recommandé (ou 20.19+).
 
 ```sh
@@ -70,8 +103,8 @@ npm install
 npm run dev
 ```
 
-Ouvrez l’URL affichée par Vite. Sur un téléphone du même réseau, utilisez l’adresse
-réseau affichée (port 5173 par défaut).
+Utilisez l’URL Vite affichée. Pour un téléphone du même réseau, ouvrez l’adresse
+réseau indiquée (port 5173 par défaut).
 
 ```sh
 npm test
@@ -79,36 +112,18 @@ npm run build
 npm run preview
 ```
 
-## Architecture
+- `src/core`, `src/collision` : cinématique pure, pas fixe, contacts et recul sûr.
+- `src/rendering` : personnage et contours de l’union des rectangles.
+- `src/modes/maze` : définitions, palettes, arrivées, sessions et podium.
+- `src/editor` : document avec historique, stockage et panneau d’édition.
+- `src/scenes`, `src/ui`, `src/debug` : assemblage et interfaces.
+- `tests` : géométrie, parcours, édition, stockage, chronométrage et contrôles.
 
-- `src/core` : cinématique pure, états et simulation à pas fixe de 1/240 s.
-- `src/collision` : contacts disque/capsule contre rectangles, arrêt au contact,
-  inversion et recul progressif de 8 px sur 80 ms, limité par les autres murs.
-- `src/modes/maze` : parcours versionnés, session, chronomètre et records.
-- `src/rendering` : personnage, trajectoire et labyrinthes.
-- `src/input`, `src/camera` : entrées souris/tactile et suivi du pivot partagés.
-- `src/scenes` : assemblage du laboratoire et du mode course.
-- `src/ui`, `src/debug` : interface de course et contrôles de développement distincts.
-- `tests` : invariants de mouvement, contacts, temps, stockage défaillant et
-  traversées complètes des parcours par suites de touchers.
-- `docs/superpowers` : conception et plan de développement.
+Les traversées automatisées terminent les trois parcours et les deux routes de
+La bifurcation sans pénétration des murs. Les contrôles de navigateur couvrent
+l’édition, le test/retour, l’export/import, le podium, le repli de panneau et le
+format mobile. Ces vérifications ne remplacent pas un essai tactile sur un
+appareil physique, restant à effectuer pour affiner le ressenti.
 
-Une même suite d’appuis horodatés donne le même mouvement à pas fixe,
-à la précision flottante près. Les contacts persistants sont verrouillés jusqu’à
-séparation ; les murs restent solides pendant le recul. Aucune correction par
-téléportation et aucune fenêtre d’immunité aux collisions.
-
-## Publication et validation
-
-GitHub Actions exécute les tests, compile puis publie `dist/` sur GitHub Pages à
-chaque push sur `main`. La source Pages est **GitHub Actions** dans les paramètres
-du dépôt. Le workflow peut aussi être relancé manuellement.
-
-Les tests automatisés vérifient des traversées complètes des trois parcours et
-les deux routes de La bifurcation, sans pénétration des murs. L’interface est
-contrôlée dans le navigateur aux formats ordinateur, portrait et paysage.
-Ces simulations ne remplacent pas un essai tactile sur un téléphone réel,
-qui reste à effectuer pour affiner le ressenti du rebond et la difficulté.
-
-Capacitor, sons, monétisation et classement en ligne ne sont pas intégrés.
-Le build statique `dist/` pourra servir de `webDir` lors de l’adaptation Capacitor.
+Chaque push sur `main` exécute tests et build, puis publie `dist/` sur GitHub Pages.
+Capacitor, son, monétisation et classement en ligne ne sont pas intégrés.

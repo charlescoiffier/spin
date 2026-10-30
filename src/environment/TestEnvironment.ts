@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { Wall } from "../collision/geometry";
+import { drawWalls } from "../rendering/drawWalls";
 export function createTestEnvironment(scene: Phaser.Scene): Wall[] {
   const g = scene.add.graphics();
   const extent = 4000;
@@ -26,10 +27,7 @@ export function createTestEnvironment(scene: Phaser.Scene): Wall[] {
     { id: "right", x: 340, y: 100, width: 40, height: 300 },
     { id: "top", x: 100, y: -300, width: 350, height: 40 },
   ];
-  walls.forEach((w) => {
-    g.fillStyle(0x25323e).fillRect(w.x, w.y, w.width, w.height);
-    g.lineStyle(2, 0x8ba8b8).strokeRect(w.x, w.y, w.width, w.height);
-  });
+  drawWalls(g, walls, 0x25323e, 0x8ba8b8);
   scene.add.text(-22, -64, "ORIGINE", {
     fontFamily: "monospace",
     fontSize: "11px",

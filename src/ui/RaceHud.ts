@@ -1,16 +1,14 @@
 import type { RaceStatus } from "../modes/maze/RaceSession";
-import { courses } from "../modes/maze/courses";
 import type { MazeDefinition } from "../modes/maze/MazeDefinition";
 import type { Point } from "../core/SpinMotion";
-export function formatTime(ms: number): string {
-  return `${(ms / 1000).toFixed(2)} s`;
-}
+import type { ScoreEntry } from "../modes/maze/RecordStore";
+import { defaultTheme } from "../modes/maze/theme";
+import { courseBounds } from "../rendering/drawCourse";
+import { wallOutline } from "../rendering/wallOutline";
+export const formatTime = (ms: number) => `${(ms / 1000).toFixed(2)} s`;
 export class RaceHud {
   private controller = new AbortController();
-  private timer: HTMLElement;
-  private best: HTMLElement;
-  private message: HTMLElement;
-  private marker: SVGCircleElement | null = null;
+  private pending: ((name: string) => void) | null = null;
   private lastStatus: RaceStatus | null = null;
   constructor(
     private root: HTMLElement,
@@ -18,74 +16,181 @@ export class RaceHud {
       restart: () => void;
       selectCourse: (id: string) => void;
       openLab: () => void;
+      openEditor: () => void;
+      courseList: readonly MazeDefinition[];
+      preview?: boolean;
     },
   ) {
-    root.innerHTML = `<div class="race-heading">Contre-la-montre</div><h1 class="course-title"></h1><div class="race-clock"><span>Votre temps</span><strong class="timer">0.00 s</strong><span class="best"></span></div><p class="race-message" role="status"></p><button class="restart primary">Recommencer</button><div class="course-list" aria-label="Choisir un parcours"></div><div class="course-overview" aria-label="Carte du parcours"></div><p class="race-rules">Clic, toucher ou espace pour changer de pivot.<br>Les murs vous font rebondir.<br>Amenez les deux boules dans la sortie.</p><button class="open-lab">Ouvrir le laboratoire</button>`;
-    this.timer = root.querySelector(".timer")!;
-    this.best = root.querySelector(".best")!;
-    this.message = root.querySelector(".race-message")!;
+    root.innerHTML = `<div class="race-heading">${callbacks.preview ? "Essai du parcours" : "Contre-la-montre"}</div><h1 class="course-title"></h1><div class="race-clock"><span>Votre temps</span><strong class="timer">0.00 s</strong><span class="best"></span></div><p class="race-message" role="status"></p><form class="score-form" hidden><label>Votre nom<input name="player" maxlength="24" autocomplete="nickname" required></label><button class="primary" type="submit">Enregistrer le temps</button><button type="button" class="skip-name">Passer (Anonyme)</button></form><button class="restart primary">Recommencer</button><section class="podium"><h2>Les trois meilleurs temps</h2><ol></ol><small>Enregistrés dans ce navigateur</small></section><div class="course-list" aria-label="Choisir un parcours"></div><div class="course-overview" aria-label="Carte du parcours"></div><p class="race-rules"></p><button class="open-editor">${callbacks.preview ? "Retour à l’éditeur" : "Éditeur de parcours"}</button><button class="open-lab">Laboratoire</button>`;
+    const signal = this.controller.signal;
+    root.querySelector(".restart")!.addEventListener(
+      "click",
+      () => {
+        this.pending = null;
+        root.querySelector<HTMLElement>(".score-form")!.hidden = true;
+        callbacks.restart();
+      },
+      { signal },
+    );
     root
-      .querySelector(".restart")!
-      .addEventListener("click", callbacks.restart, {
-        signal: this.controller.signal,
-      });
+      .querySelector(".open-editor")!
+      .addEventListener("click", callbacks.openEditor, { signal });
     root
       .querySelector(".open-lab")!
-      .addEventListener("click", callbacks.openLab, {
-        signal: this.controller.signal,
+      .addEventListener("click", callbacks.openLab, { signal });
+    for (const m of callbacks.courseList) {
+      const b = document.createElement("button");
+      b.textContent = m.title;
+      b.dataset.course = m.id;
+      b.addEventListener("click", () => callbacks.selectCourse(m.id), {
+        signal,
       });
-    const list = root.querySelector(".course-list")!;
-    courses.forEach((course) => {
-      const button = document.createElement("button");
-      button.textContent = course.title;
-      button.dataset.course = course.id;
-      button.addEventListener(
-        "click",
-        () => callbacks.selectCourse(course.id),
-        { signal: this.controller.signal },
-      );
-      list.append(button);
+      root.querySelector(".course-list")!.append(b);
+    }
+    const form = root.querySelector<HTMLFormElement>("form")!,
+      input = form.querySelector("input")!;
+    const save = (name: string) => {
+      if (!this.pending) return;
+      const callback = this.pending;
+      this.pending = null;
+      form.hidden = true;
+      callback(name);
+    };
+    form.addEventListener(
+      "submit",
+      (e) => {
+        e.preventDefault();
+        if (!input.value.trim()) {
+          input.setCustomValidity("Indiquez votre nom");
+          input.reportValidity();
+          return;
+        }
+        save(input.value.trim());
+      },
+      { signal },
+    );
+    input.addEventListener("input", () => input.setCustomValidity(""), {
+      signal,
     });
+    root
+      .querySelector(".skip-name")!
+      .addEventListener("click", () => save("Anonyme"), { signal });
   }
-  setCourse(maze: MazeDefinition): void {
-    const width = Math.max(...maze.walls.map((w) => w.x + w.width)),
-      height = Math.max(...maze.walls.map((w) => w.y + w.height));
-    const e = maze.exit;
-    this.root.querySelector(".course-overview")!.innerHTML =
-      `<svg viewBox="-20 -20 ${width + 40} ${height + 40}" role="img" aria-label="Plan du labyrinthe : point abricot pour votre position, zone menthe pour la sortie"><rect x="${e.x}" y="${e.y}" width="${e.width}" height="${e.height}" fill="#7ce5c2" opacity=".6"/>${maze.walls.map((w) => `<rect x="${w.x}" y="${w.y}" width="${w.width}" height="${w.height}" fill="#8ba8b8"/>`).join("")}<circle class="position" r="22" fill="#ffbc79"/></svg>`;
-    this.marker = this.root.querySelector(".position");
+  setCourse(m: MazeDefinition): void {
+    this.root.querySelector(".course-title")!.textContent = m.title;
+    const t = { ...defaultTheme, ...m.theme },
+      b = courseBounds(m),
+      e = m.exit,
+      ns = "http://www.w3.org/2000/svg",
+      svg = document.createElementNS(ns, "svg");
+    svg.setAttribute(
+      "viewBox",
+      `${b.left - 20} ${b.top - 20} ${b.right - b.left + 40} ${b.bottom - b.top + 40}`,
+    );
+    svg.setAttribute("role", "img");
+    svg.setAttribute(
+      "aria-label",
+      "Plan du parcours : point pour votre position et zone d’arrivée",
+    );
+    const goal = document.createElementNS(ns, "rect");
+    for (const [k, v] of Object.entries({
+      x: e.x,
+      y: e.y,
+      width: e.width,
+      height: e.height,
+      fill: t.exitFill,
+    }))
+      goal.setAttribute(k, String(v));
+    svg.append(goal);
+    for (const w of m.walls) {
+      const r = document.createElementNS(ns, "rect");
+      for (const [k, v] of Object.entries({
+        x: w.x,
+        y: w.y,
+        width: w.width,
+        height: w.height,
+        fill: t.wallFill,
+      }))
+        r.setAttribute(k, String(v));
+      svg.append(r);
+    }
+    const path = document.createElementNS(ns, "path");
+    path.setAttribute(
+      "d",
+      wallOutline(m.walls)
+        .map((s) => `M${s.a.x},${s.a.y}L${s.b.x},${s.b.y}`)
+        .join(""),
+    );
+    path.setAttribute("stroke", t.wallOutline);
+    path.setAttribute("stroke-width", "8");
+    path.setAttribute("fill", "none");
+    svg.append(path);
+    const marker = document.createElementNS(ns, "circle");
+    marker.classList.add("position");
+    marker.setAttribute("r", "22");
+    marker.setAttribute("fill", "#ffbc79");
+    svg.append(marker);
+    this.root.querySelector(".course-overview")!.replaceChildren(svg);
     this.root
       .querySelectorAll<HTMLButtonElement>("[data-course]")
-      .forEach((button) => {
-        const active = button.dataset.course === maze.id;
-        button.setAttribute("aria-pressed", String(active));
-      });
+      .forEach((button) =>
+        button.setAttribute(
+          "aria-pressed",
+          String(button.dataset.course === m.id),
+        ),
+      );
+    this.root.querySelector(".race-rules")!.textContent = {
+      whole: "Placez les deux boules entièrement dans la zone d’arrivée.",
+      pivot: "Immobilisez la boule pivot entièrement dans la zone d’arrivée.",
+      touch: "Touchez la cible avec une boule ou la barre.",
+    }[m.finishMode ?? "whole"];
   }
-  updatePosition(point: Point): void {
-    this.marker?.setAttribute("cx", String(point.x));
-    this.marker?.setAttribute("cy", String(point.y));
+  setPodium(entries: ScoreEntry[]): void {
+    const ol = this.root.querySelector(".podium ol")!;
+    ol.replaceChildren();
+    for (let i = 0; i < 3; i++) {
+      const li = document.createElement("li"),
+        name = document.createElement("span"),
+        time = document.createElement("strong");
+      name.textContent = entries[i]?.name ?? "—";
+      time.textContent = entries[i] ? formatTime(entries[i].timeMs) : "—";
+      li.append(name, time);
+      ol.append(li);
+    }
+    this.root.querySelector(".best")!.textContent = entries[0]
+      ? `Record : ${formatTime(entries[0].timeMs)}`
+      : "Aucun temps enregistré";
   }
-  update(view: {
-    status: RaceStatus;
-    elapsedMs: number;
-    bestMs: number | null;
-    courseTitle: string;
-  }): void {
-    this.timer.textContent = formatTime(view.elapsedMs);
-    this.best.textContent =
-      view.bestMs === null
-        ? "Aucun record pour le moment"
-        : `Meilleur temps : ${formatTime(view.bestMs)}`;
-    this.root.querySelector(".course-title")!.textContent = view.courseTitle;
-    if (this.lastStatus !== view.status) {
+  requestName(submit: (name: string) => void): void {
+    this.pending = submit;
+    const form = this.root.querySelector<HTMLFormElement>("form")!;
+    form.hidden = false;
+    form.reset();
+    document.getElementById("app")!.classList.remove("panel-collapsed");
+    const toggle = document.getElementById("panel-toggle")!;
+    toggle.setAttribute("aria-expanded", "true");
+    toggle.textContent = "Masquer le panneau";
+    requestAnimationFrame(() => {
+      form.scrollIntoView({ block: "nearest" });
+      form.querySelector("input")!.focus({ preventScroll: true });
+    });
+  }
+  updatePosition(p: Point): void {
+    const marker = this.root.querySelector(".position");
+    marker?.setAttribute("cx", String(p.x));
+    marker?.setAttribute("cy", String(p.y));
+  }
+  update(view: { status: RaceStatus; elapsedMs: number }): void {
+    this.root.querySelector(".timer")!.textContent = formatTime(view.elapsedMs);
+    if (view.status !== this.lastStatus) {
       this.lastStatus = view.status;
-      this.message.textContent = {
+      this.root.dataset.status = view.status;
+      this.root.querySelector(".race-message")!.textContent = {
         ready: "Touchez le terrain ou appuyez sur espace pour démarrer.",
-        running: "Rejoignez la zone menthe.",
+        running: "Rejoignez l’arrivée.",
         finished: "Arrivée ! Rejouez pour améliorer votre temps.",
         interrupted: "Tentative interrompue. Recommencez pour un temps valide.",
       }[view.status];
-      this.root.dataset.status = view.status;
     }
   }
   destroy(): void {
