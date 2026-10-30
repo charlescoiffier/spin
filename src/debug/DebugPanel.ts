@@ -52,6 +52,7 @@ export class DebugPanel {
     toggle.className = "toggle";
     toggle.innerHTML =
       '<span>Afficher la trajectoire</span><input type="checkbox" checked>';
+    toggle.querySelector("input")!.checked = settings.trail;
     toggle.querySelector("input")!.addEventListener(
       "change",
       (e) => {
