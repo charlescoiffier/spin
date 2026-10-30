@@ -13,7 +13,7 @@ const contains = (r: Rect, p: Point) =>
   p.x >= r.x && p.x <= r.x + r.width && p.y >= r.y && p.y <= r.y + r.height;
 export class EditorDocument {
   course: MazeDefinition;
-  selected: string | null = null;
+  selected: "spawn" | "exit" | `wall:${string}` | null = null;
   tool: EditorTool = "select";
   private past: MazeDefinition[] = [];
   private future: MazeDefinition[] = [];
@@ -77,7 +77,7 @@ export class EditorDocument {
         },
       ];
     });
-    this.selected = id;
+    this.selected = `wall:${id}`;
   }
   selectAt(p: Point): void {
     if (contains(this.course.exit, p)) {
@@ -90,15 +90,17 @@ export class EditorDocument {
       this.selected = "spawn";
       return;
     }
-    this.selected =
-      [...this.course.walls].reverse().find((w) => contains(w, p))?.id ?? null;
+    const wall = [...this.course.walls].reverse().find((w) => contains(w, p));
+    this.selected = wall ? `wall:${wall.id}` : null;
   }
   selectedRect(): Rect | null {
     return this.selected === "exit"
       ? this.course.exit
-      : (this.course.walls.find((w) => w.id === this.selected) ?? null);
+      : (this.course.walls.find((w) => `wall:${w.id}` === this.selected) ??
+          null);
   }
   moveSelected(delta: Point): void {
+    if (delta.x === 0 && delta.y === 0) return;
     this.change(() => {
       if (this.selected === "spawn") {
         this.course.spawn.a = {
@@ -140,7 +142,7 @@ export class EditorDocument {
     if (this.selected === "spawn" || this.selected === "exit") return;
     this.change(() => {
       this.course.walls = this.course.walls.filter(
-        (w) => w.id !== this.selected,
+        (w) => `wall:${w.id}` !== this.selected,
       );
     });
     this.selected = null;

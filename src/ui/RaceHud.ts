@@ -9,6 +9,7 @@ export const formatTime = (ms: number) => `${(ms / 1000).toFixed(2)} s`;
 export class RaceHud {
   private controller = new AbortController();
   private pending: ((name: string) => void) | null = null;
+  private preview = false;
   private lastStatus: RaceStatus | null = null;
   constructor(
     private root: HTMLElement,
@@ -21,6 +22,7 @@ export class RaceHud {
       preview?: boolean;
     },
   ) {
+    this.preview = !!callbacks.preview;
     root.innerHTML = `<div class="race-heading">${callbacks.preview ? "Essai du parcours" : "Contre-la-montre"}</div><h1 class="course-title"></h1><div class="race-clock"><span>Votre temps</span><strong class="timer">0.00 s</strong><span class="best"></span></div><p class="race-message" role="status"></p><form class="score-form" hidden><label>Votre nom<input name="player" maxlength="24" autocomplete="nickname" required></label><button class="primary" type="submit">Enregistrer le temps</button><button type="button" class="skip-name">Passer (Anonyme)</button></form><button class="restart primary">Recommencer</button><section class="podium"><h2>Les trois meilleurs temps</h2><ol></ol><small>Enregistrés dans ce navigateur</small></section><div class="course-list" aria-label="Choisir un parcours"></div><div class="course-overview" aria-label="Carte du parcours"></div><p class="race-rules"></p><button class="open-editor">${callbacks.preview ? "Retour à l’éditeur" : "Éditeur de parcours"}</button><button class="open-lab">Laboratoire</button>`;
     const signal = this.controller.signal;
     root.querySelector(".restart")!.addEventListener(
@@ -146,6 +148,11 @@ export class RaceHud {
     }[m.finishMode ?? "whole"];
   }
   setPodium(entries: ScoreEntry[]): void {
+    if (this.preview) {
+      this.root.querySelector<HTMLElement>(".podium")!.hidden = true;
+      this.root.querySelector(".best")!.textContent = "Essai sans classement";
+      return;
+    }
     const ol = this.root.querySelector(".podium ol")!;
     ol.replaceChildren();
     for (let i = 0; i < 3; i++) {

@@ -1,3 +1,4 @@
+import { createId } from "../../core/createId";
 import type { MazeDefinition } from "./MazeDefinition";
 type StoragePort = Pick<Storage, "getItem" | "setItem">;
 export interface ScoreEntry {
@@ -71,10 +72,7 @@ export class RecordStore {
     const clean = name.trim().replace(/\s+/g, " ").slice(0, 24);
     if (!clean) throw Error("Indiquez un nom");
     if (!this.qualifies(maze, timeMs)) return this.top(maze);
-    const entries = [
-      ...this.top(maze),
-      { id: crypto.randomUUID(), name: clean, timeMs },
-    ]
+    const entries = [...this.top(maze), { id: createId(), name: clean, timeMs }]
       .sort((a, b) => a.timeMs - b.timeMs)
       .slice(0, 3);
     this.memory.set(this.key(maze), entries);

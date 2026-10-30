@@ -1,3 +1,4 @@
+import { createId } from "../core/createId";
 import { parseMaze, type MazeDefinition } from "../modes/maze/MazeDefinition";
 type StoragePort = Pick<Storage, "getItem" | "setItem">;
 const key = "spin:custom-courses:v1";
@@ -41,7 +42,7 @@ export class CourseStore {
     else {
       if (this.courses.length >= 40)
         throw Error("Maximum 40 parcours enregistrés");
-      m.id = `custom-${crypto.randomUUID()}`;
+      m.id = `custom-${createId()}`;
       m.version = 1;
     }
     this.courses = this.courses.filter((c) => c.id !== m.id);

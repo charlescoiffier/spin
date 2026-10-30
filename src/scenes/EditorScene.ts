@@ -192,6 +192,7 @@ export class EditorScene extends Phaser.Scene {
           this.doc.placeExit(q);
           break;
         case "select":
+          if (Math.hypot(p.x - g.screen.x, p.y - g.screen.y) < 4) break;
           this.doc.moveSelected({ x: q.x - g.world.x, y: q.y - g.world.y });
           break;
       }
