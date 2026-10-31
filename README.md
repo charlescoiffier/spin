@@ -10,8 +10,9 @@ _Twin Spin_ (GlobZ), avec un éditeur visuel dans le navigateur.
 
 La branche `feat/online-race` prépare la première course à 1–4 joueurs : serveur
 autoritaire, contacts optionnels, salons publics/privés, invités, comptes et
-terrains privés versionnés. Elle n’est pas encore publiée : l’authentification,
-les droits en base réelle et les essais sur plusieurs appareils restent à valider.
+terrains privés versionnés. L’authentification et les droits ont été vérifiés
+sur Supabase local réel ; le projet Supabase en ligne est configuré. La version
+n’est pas encore publiée : hébergement du serveur et essais sur plusieurs appareils restent à terminer.
 L’interface indique clairement lorsque les services ne sont pas configurés.
 
 - [Document cadre validé](docs/superpowers/specs/2026-10-31-spin-multiplayer-design.md)
@@ -23,6 +24,10 @@ Pour développer le réseau : `npm run dev:server` dans un terminal et
 `npm run dev` dans un autre. Les comptes et sauvegardes nécessitent la
 configuration décrite dans le guide ; aucun compte de démonstration ne contourne
 les permissions. Le mode solo conserve son fonctionnement local.
+
+`npm run supabase:start` démarre les services locaux et prépare `.env` sans
+afficher les clés ; `npm run test:database` vérifie réellement les droits et
+une course avec compte/invité. `npm run supabase:stop` conserve les données.
 
 ## Jouer
 

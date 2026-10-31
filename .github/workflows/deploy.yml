@@ -12,7 +12,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: spin-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -27,8 +27,13 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build:server
+      - run: npm run supabase:start
+      - run: npm run test:database
       - run: npm run test:integration
       - run: npm run build
+      - run: docker build -f server/Dockerfile -t spin-server:ci .
+      - run: npm run supabase:stop
+        if: always()
   deploy:
     needs: verify
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'

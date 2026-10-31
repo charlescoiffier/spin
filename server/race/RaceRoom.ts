@@ -27,7 +27,7 @@ export function createRaceRoom(services: RoomServices) {
       if (identity.kind !== 'account') throw Error('Un compte est nécessaire pour créer une partie');
       const c = options.config;
       if (!c || typeof c.terrainId !== 'string' || !Number.isSafeInteger(c.revision)) throw Error('Terrain invalide');
-      const terrain = await services.terrains.getForOwner(identity.id, c.terrainId, c.revision);
+      const terrain = await services.terrains.getForOwner(identity.id, c.terrainId, c.revision, options.token);
       this.session = new RaceSessionController(terrain, { seats: c.seats, visibility: c.visibility, contactsEnabled: c.contactsEnabled, physics: parseRacePhysics(c.physics) });
       this.creatorId = identity.id; this.quotaOwnerId = identity.id;
       if ((counts.get(identity.id) ?? 0) >= 3 || total >= 64) throw Error('Limite de parties atteinte');

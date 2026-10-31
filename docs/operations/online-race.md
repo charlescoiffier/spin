@@ -6,7 +6,9 @@ Cette branche ajoute le serveur de course et le client navigateur. Sans configur
 
 ```sh
 npm install
+npm run supabase:start
 npm test
+npm run test:database
 npm run build
 npm run build:server
 npm run test:integration
@@ -19,15 +21,29 @@ Le serveur écoute sur 2567. Le client utilise `VITE_RACE_SERVER_URL` (par défa
 
 ## Comptes et terrains
 
-1. Démarrer Docker et initialiser un environnement Supabase local avec la CLI officielle ; appliquer les migrations versionnées dans `supabase/migrations`.
-2. Copier `.env.example` vers `.env` et saisir les clés dans ce fichier ignoré par Git. Client : URL publique et clé anonyme. Serveur : URL et clés anonyme/service. Ne jamais préfixer la clé de service par `VITE_`.
-3. Autoriser `http://localhost:5174/` comme URL de retour de connexion et activer l’authentification email. Les liens locaux sont consultables dans l’outil email local de Supabase ; ne pas utiliser l’envoi à de vraies adresses pour les tests automatisés.
-4. Exécuter les tests de droits avec `TEST_SUPABASE_URL`, `TEST_SUPABASE_ANON_KEY`, `TEST_SUPABASE_SERVICE_ROLE_KEY` définis dans le terminal local. Ils ne créent des utilisateurs temporaires que sur localhost et les suppriment après les assertions. Sans ces variables, le test est **ignoré**, pas réussi.
+1. Exécuter `npm run supabase:start`. La CLI officielle 2.122.0 et son mode natif expérimental sont verrouillés dans le dépôt ; ce mode fonctionne sur ce Mac Apple Silicon sans Docker. Linux récent est également pris en charge. Le premier démarrage télécharge les services officiels et applique les migrations versionnées. [Conditions du runtime natif](https://supabase.com/docs/guides/local-development/docker-and-native-runtimes).
+2. Le script crée `.env` local automatiquement, sans afficher de clé ni écraser une configuration distante. Les données et journaux restent dans `.supabase-local/`, ignoré par Git et Docker. Client et serveur utilisent seulement l’URL et la clé publique ; la lecture d’un terrain par le serveur utilise le JWT du créateur et respecte ses règles RLS. Aucune clé administrateur n’est nécessaire au serveur de jeu.
+3. Les adresses locales de retour sont définies dans `supabase/config.toml`. `npm run supabase:status` affiche les URL réelles (ports attribués par la CLI), dont la boîte Mailpit qui capture les liens de connexion localement. Les emails doivent être confirmés ; ne pas envoyer à de vraies adresses dans les tests automatisés.
+4. Exécuter `npm run test:database` : cette commande exige un environnement local disponible et ne masque pas une absence de base par un test ignoré. Elle charge les clés de test en mémoire, crée des comptes temporaires sur localhost puis les supprime. La commande générique `test:integration` peut ignorer ces tests si les variables `TEST_SUPABASE_*` sont absentes ; la CI exécute donc aussi explicitement `test:database`.
 5. Se connecter dans « En ligne », créer ou importer explicitement un terrain personnel, puis vérifier la récupération dans un second navigateur. Une conversion de l’ancien type d’arrivée nécessite un second clic de confirmation ; le stockage local original reste intact.
 
 Le schéma conserve une tête de terrain et ses révisions immuables. Un appel RPC vérifie le propriétaire, sérialise les écritures, refuse une révision obsolète et limite à 40 terrains / 128 murs / 1 Mo par document. Les tables ne sont pas modifiables directement par le navigateur. Les révisions ne sont pas publiques ; le serveur ne transmet qu’une copie validée aux participants d’une partie autorisée.
 
+Pour arrêter sans effacer les données : `npm run supabase:stop`. Pour rétablir `.env` à partir du service déjà démarré : `npm run supabase:configure`. L’environnement hébergé utilise une configuration séparée ; le script local refuse de remplacer ses URL.
+
+## Projet Supabase en ligne
+
+Projet SPIN créé le 31 octobre 2026 : `gqqhworxlpowipszmyav`, organisation SPIN gratuite, région West Europe (London), instance Nano. [Tableau de bord](https://supabase.com/dashboard/project/gqqhworxlpowipszmyav).
+
+La migration `202610310001_private_terrains.sql` a été appliquée via l’éditeur SQL et inscrite au journal `supabase_migrations.schema_migrations`. Les deux tables ont RLS activé, aucune lecture anonyme ni insertion/mise à jour directe pour le rôle utilisateur. Les écritures passent par la fonction propriétaire. Le journal de migrations est également protégé par RLS.
+
+Connexion email activée avec confirmation requise. Site URL et seule URL de redirection explicite : `https://charlescoiffier.github.io/spin/`. La clé publiable existante est configurée comme variable publique GitHub ; aucune clé secrète du projet ni mot de passe PostgreSQL n’a été copié. Le serveur accède aux terrains sous l’identité de son créateur.
+
+Choix utilisateur : hébergement Render gratuit pour les essais ; **SMTP dédié reporté**. Tant qu’il n’est pas configuré, le service email intégré ne livre qu’aux adresses membres du projet et impose ses limites. Les invités du jeu rejoignent avec un pseudo sans compte Supabase. [Limites officielles des emails intégrés](https://supabase.com/docs/guides/auth/auth-smtp).
+
 ## Proposition de déploiement à approuver avant activation
+
+Choix confirmé : **Render Free pour les essais**, sans option payante. `render.yaml` décrit une instance Node 22 à Francfort, construite depuis `feat/online-race`, sans déploiement automatique, avec `/health` et les seules variables publiques Supabase. Après fusion du code, remplacer la branche de référence par `main`. Le SMTP dédié est reporté.
 
 - Frontend : GitHub Pages existant, variables publiques injectées au build.
 - Serveur : un conteneur Node 22 sur Render en région européenne, une seule instance au départ (annuaire et jetons invités en mémoire), HTTPS/WSS et `/health`. Dockerfile : `server/Dockerfile`, contexte racine. Une autre offre de conteneur persistant peut convenir sans modifier la simulation.

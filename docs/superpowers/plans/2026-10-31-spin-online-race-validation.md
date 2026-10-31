@@ -4,6 +4,8 @@ Date : 31 octobre 2026. Branche : `feat/online-race`. **Travail en cours, non pu
 
 Dernier point vérifié : 78 tests unitaires réussis, compilations client/serveur réussies, intégration transport réussie (dont expiration réelle à 30 secondes). [Revue et corrections](2026-10-31-spin-online-race-review.md).
 
+Mise à jour après configuration Supabase : **80 tests unitaires**, trois tests réels supplémentaires sur Supabase local (droits, confirmation email, compte réel + terrain privé + invité dans une course réseau). Mode natif officiel utilisé sans moteur Docker. Connexion par lien email et copie privée d’un terrain également vérifiées dans le navigateur local. Le projet hébergé existe maintenant ; migration appliquée, droits SQL contrôlés, URL de retour configurée et API anonyme refusée. SMTP dédié reporté par choix utilisateur ; serveur Render gratuit en cours de préparation. Ces résultats remplacent les blocages locaux cités ci-dessous, conservés comme historique du premier point de contrôle.
+
 ## Vérifié localement
 
 - Référence avant changement : 58 tests, compilation client réussie.
