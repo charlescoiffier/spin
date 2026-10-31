@@ -58,14 +58,17 @@ export function drawCourse(
     g.lineBetween(e.x + e.width, e.y, e.x, e.y + e.height);
   }
   drawWalls(g, m.walls, colorNumber(t.wallFill), colorNumber(t.wallOutline));
-  const a = m.spawn.a;
+  const starts = editor ? m.raceSpawns ?? [m.spawn] : [m.spawn];
+  for (const start of starts) {
+  const a = start.a;
   g.lineStyle(2, colorNumber(t.start), 0.7).strokeCircle(a.x, a.y, 25);
   if (editor) {
-    const x = a.x + 80 * Math.cos(m.spawn.angle),
-      y = a.y + 80 * Math.sin(m.spawn.angle);
+    const x = a.x + 80 * Math.cos(start.angle),
+      y = a.y + 80 * Math.sin(start.angle);
     g.lineStyle(4, colorNumber(t.start), 0.7).lineBetween(a.x, a.y, x, y);
     g.fillStyle(colorNumber(t.start), 0.8)
       .fillCircle(a.x, a.y, 17)
       .fillCircle(x, y, 17);
+  }
   }
 }

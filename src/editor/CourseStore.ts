@@ -3,7 +3,7 @@ import { parseMaze, type MazeDefinition } from "../modes/maze/MazeDefinition";
 type StoragePort = Pick<Storage, "getItem" | "setItem">;
 const key = "spin:custom-courses:v1";
 function rules(m: MazeDefinition): string {
-  return JSON.stringify([m.walls, m.spawn, m.exit, m.finishMode ?? "whole"]);
+  return JSON.stringify([m.walls, m.spawn, m.raceSpawns, m.exit, m.finishMode ?? "whole"]);
 }
 export class CourseStore {
   private courses: MazeDefinition[] = [];
