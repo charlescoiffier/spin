@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+.superpowers
+.supabase-local
+.env
+.env.*
+tests
+docs

@@ -9,6 +9,9 @@ import { getCourseStore } from "../modes/maze/services";
 import { courses } from "../modes/maze/courses";
 import { validateMaze, parseMaze } from "../modes/maze/MazeDefinition";
 import type { Point } from "../core/SpinMotion";
+import { account, cloudTerrains } from '../account/services';
+import { migrateLegacyTerrain } from '../shared/terrainMigration';
+import { createId } from '../core/createId';
 interface Gesture {
   tool: EditorTool;
   world: Point;
@@ -97,6 +100,27 @@ export class EditorScene extends Phaser.Scene {
       back: () => this.scene.start("maze", {}),
     });
     this.panel.setCourses([...courses, ...getCourseStore().list()]);
+    const cloudButton = document.createElement('button');
+    cloudButton.textContent = 'Enregistrer dans mon compte';
+    let acceptedConversion = '';
+    let saving = false;
+    cloudButton.addEventListener('click', async () => {
+      if (saving) return;
+      saving = true; cloudButton.disabled = true;
+      try {
+        if (!await account.restoreSession()) throw Error('Connectez-vous depuis « En ligne » pour sauvegarder dans votre compte. Votre document reste ici.');
+        const converted = migrateLegacyTerrain(this.doc.course), fingerprint = JSON.stringify(this.doc.course);
+        if (converted.needsConfirmation && acceptedConversion !== fingerprint) {
+          acceptedConversion = fingerprint; this.panel.notice(converted.warnings.join(' ') + ' Cliquez à nouveau pour confirmer.'); return;
+        }
+        const target = this.doc.cloudTarget;
+        const saved = await cloudTerrains.save({ ...converted.terrain, id: target?.id ?? `personal-${createId()}` }, target?.revision ?? 0);
+        this.doc.cloudTarget = { id: saved.id, revision: saved.revision };
+        this.panel.notice(`Terrain privé enregistré dans votre compte (révision ${saved.revision}).`);
+      } catch (error) { this.panel.notice(error instanceof Error ? error.message : 'Sauvegarde impossible', true); }
+      finally { saving = false; cloudButton.disabled = false; }
+    });
+    root.querySelector('.save')!.after(cloudButton);
     this.redraw();
     this.fit();
     this.input.on("pointerdown", this.down, this);

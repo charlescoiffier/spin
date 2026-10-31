@@ -8,6 +8,7 @@ export interface MazeDefinition {
   title: string;
   walls: readonly Wall[];
   spawn: { a: Point; angle: number };
+  raceSpawns?: readonly { a: Point; angle: number }[];
   exit: Rect;
   finishMode?: FinishMode;
   theme?: CourseTheme;
@@ -41,6 +42,9 @@ export function validateMaze(maze: MazeDefinition): string[] {
     Math.abs(r.x + r.width) <= 8000 &&
     Math.abs(r.y + r.height) <= 8000;
   const mode = maze.finishMode ?? "whole";
+  if (maze.raceSpawns !== undefined && (!Array.isArray(maze.raceSpawns) || maze.raceSpawns.length < 1 || maze.raceSpawns.length > 4 ||
+    maze.raceSpawns.some(s => !s?.a || ![s.a.x, s.a.y, s.angle].every(Number.isFinite))))
+    errors.push("Départs multijoueurs invalides");
   if (!["pivot", "whole", "touch"].includes(mode))
     errors.push("Type d’arrivée inconnu");
   const min = mode === "whole" ? 114 : mode === "pivot" ? 34 : 24;
@@ -119,6 +123,7 @@ export function parseMaze(value: unknown): MazeDefinition {
       height: w.height,
     })),
     spawn: { a: { x: m.spawn.a.x, y: m.spawn.a.y }, angle: m.spawn.angle },
+    ...(m.raceSpawns ? { raceSpawns: m.raceSpawns.map(s => ({ a: { x: s.a.x, y: s.a.y }, angle: s.angle })) } : {}),
     exit: {
       x: m.exit.x,
       y: m.exit.y,

@@ -1,5 +1,9 @@
 import { SpinMotion, type Point } from "../core/SpinMotion";
 import { getContacts, type Contact, type Wall } from "./geometry";
+export interface CollisionState {
+  locked: string[];
+  recoil: { normal: Point; age: number; distance: number } | null;
+}
 
 /** Collision response wraps pure kinematics. All proposals are checked before commit. */
 export class CollisionMotion {
@@ -78,6 +82,19 @@ export class CollisionMotion {
   }
   get isRecoiling(): boolean {
     return this.recoil !== null;
+  }
+  snapshot(): CollisionState {
+    return { locked: [...this.locked].sort(), recoil: this.recoil ? structuredClone(this.recoil) : null };
+  }
+  restore(state: CollisionState): void {
+    this.locked = new Set(state.locked);
+    this.recoil = state.recoil ? structuredClone(state.recoil) : null;
+  }
+  externalImpact(normal: Point): void {
+    this.motion.reverse();
+    const n = Math.hypot(normal.x, normal.y);
+    this.recoil = n > 1e-8 && this.recoilDistance > 0
+      ? { normal: { x: normal.x / n, y: normal.y / n }, age: 0, distance: this.recoilDistance } : null;
   }
   step(seconds: number): void {
     // Keep both recoil and rotation proposals shorter than wall thickness.

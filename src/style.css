@@ -504,3 +504,10 @@ summary {
     margin-bottom: 8px;
   }
 }
+
+#open-online { width: auto; min-height: 32px; margin: 0 0 0 auto; padding: 5px 10px; }
+.online-menu summary { cursor: pointer; padding: 10px 0; }
+.online-session .online-time { display: block; font-size: 30px; margin: 12px 0; }
+.online-idle#app { grid-template-columns: minmax(0, 1fr); }
+.online-idle #play { display: none; }
+.online-idle #online-ui { grid-column: 1; grid-row: 2; width: 100%; max-height: none; padding: 24px max(20px, calc((100% - 600px) / 2)); display: block !important; }

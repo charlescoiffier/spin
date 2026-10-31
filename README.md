@@ -6,6 +6,33 @@ _Twin Spin_ (GlobZ), avec un éditeur visuel dans le navigateur.
 **[Jouer et créer un parcours](https://charlescoiffier.github.io/spin/)** ·
 [Code source](https://github.com/charlescoiffier/spin)
 
+## Course multijoueur — version d’essai
+
+Le bouton **En ligne** propose une première course à 1–4 joueurs : serveur
+autoritaire, contacts optionnels, salons publics/privés, invités, comptes et
+terrains privés versionnés. L’authentification et les droits ont été vérifiés
+sur Supabase local réel ; Supabase et le serveur Render gratuit sont configurés.
+Un compte permet de créer une partie et de sauvegarder ses terrains ; les invités
+rejoignent avec un pseudo. La connexion par email est actuellement réservée aux
+testeurs autorisés du projet, en attendant un service SMTP dédié.
+Cette version sert aux premiers essais : les tests sur appareils physiques et
+avec latence imposée restent à effectuer. Le serveur gratuit peut mettre environ
+une minute à se réveiller après une période sans activité.
+
+- [Document cadre validé](docs/superpowers/specs/2026-10-31-spin-multiplayer-design.md)
+- [Feuille de route](docs/superpowers/plans/2026-10-31-spin-roadmap.md)
+- [Plan de la course réseau](docs/superpowers/plans/2026-10-31-spin-online-race.md)
+- [Configuration et commandes réseau](docs/operations/online-race.md)
+
+Pour développer le réseau : `npm run dev:server` dans un terminal et
+`npm run dev` dans un autre. Les comptes et sauvegardes nécessitent la
+configuration décrite dans le guide ; aucun compte de démonstration ne contourne
+les permissions. Le mode solo conserve son fonctionnement local.
+
+`npm run supabase:start` démarre les services locaux et prépare `.env` sans
+afficher les clés ; `npm run test:database` vérifie réellement les droits et
+une course avec compte/invité. `npm run supabase:stop` conserve les données.
+
 ## Jouer
 
 Un clic, un toucher du terrain ou un appui sur **espace** échange le pivot et

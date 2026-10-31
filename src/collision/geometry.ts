@@ -26,7 +26,7 @@ function nearestOnSegment(p: Point, a: Point, b: Point): Point {
 }
 
 // The closest pair is either an intersection or an endpoint projected on the other segment.
-function segmentPair(a: Point, b: Point, c: Point, d: Point): [Point, Point] {
+export function segmentPair(a: Point, b: Point, c: Point, d: Point): [Point, Point] {
   const u = sub(b, a),
     v = sub(d, c),
     w = sub(c, a),

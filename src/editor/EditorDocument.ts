@@ -15,6 +15,19 @@ export class EditorDocument {
   course: MazeDefinition;
   selected: "spawn" | "exit" | `wall:${string}` | null = null;
   tool: EditorTool = "select";
+  activeSpawnIndex = 0;
+  cloudTarget?: { id: string; revision: number };
+  get activeSpawn() { return this.course.raceSpawns?.[this.activeSpawnIndex] ?? this.course.spawn; }
+  setRaceSpawnCount(count: number): void {
+    if (!Number.isInteger(count) || count < 1 || count > 4) return;
+    this.change(() => {
+      const previous = this.course.raceSpawns ?? [this.course.spawn];
+      this.course.raceSpawns = Array.from({ length: count }, (_, i) => structuredClone(previous[i] ?? {
+        a: { x: this.course.spawn.a.x, y: this.course.spawn.a.y + i * 60 }, angle: this.course.spawn.angle,
+      }));
+    });
+    this.activeSpawnIndex = Math.min(this.activeSpawnIndex, count - 1);
+  }
   private past: MazeDefinition[] = [];
   private future: MazeDefinition[] = [];
   private serial = 0;
@@ -48,6 +61,7 @@ export class EditorDocument {
     if (p) {
       this.future.push(this.course);
       this.course = p;
+      this.activeSpawnIndex = Math.min(this.activeSpawnIndex, (this.course.raceSpawns?.length ?? 1) - 1);
       this.selected = null;
     }
   }
@@ -56,6 +70,7 @@ export class EditorDocument {
     if (p) {
       this.past.push(this.course);
       this.course = p;
+      this.activeSpawnIndex = Math.min(this.activeSpawnIndex, (this.course.raceSpawns?.length ?? 1) - 1);
       this.selected = null;
     }
   }
@@ -85,7 +100,7 @@ export class EditorDocument {
       return;
     }
     if (
-      Math.hypot(p.x - this.course.spawn.a.x, p.y - this.course.spawn.a.y) < 50
+      Math.hypot(p.x - this.activeSpawn.a.x, p.y - this.activeSpawn.a.y) < 50
     ) {
       this.selected = "spawn";
       return;
@@ -103,10 +118,11 @@ export class EditorDocument {
     if (delta.x === 0 && delta.y === 0) return;
     this.change(() => {
       if (this.selected === "spawn") {
-        this.course.spawn.a = {
-          x: snap(this.course.spawn.a.x + delta.x),
-          y: snap(this.course.spawn.a.y + delta.y),
+        this.activeSpawn.a = {
+          x: snap(this.activeSpawn.a.x + delta.x),
+          y: snap(this.activeSpawn.a.y + delta.y),
         };
+        if (this.activeSpawnIndex === 0) this.course.spawn = structuredClone(this.activeSpawn);
         return;
       }
       const r = this.selectedRect();
@@ -118,7 +134,8 @@ export class EditorDocument {
   }
   placeSpawn(p: Point): void {
     this.change(() => {
-      this.course.spawn.a = { x: snap(p.x), y: snap(p.y) };
+      this.activeSpawn.a = { x: snap(p.x), y: snap(p.y) };
+      if (this.activeSpawnIndex === 0) this.course.spawn = structuredClone(this.activeSpawn);
     });
     this.selected = "spawn";
   }
@@ -154,7 +171,8 @@ export class EditorDocument {
   }
   setSpawnAngle(degrees: number): void {
     this.change(() => {
-      this.course.spawn.angle = (degrees * Math.PI) / 180;
+      this.activeSpawn.angle = (degrees * Math.PI) / 180;
+      if (this.activeSpawnIndex === 0) this.course.spawn = structuredClone(this.activeSpawn);
     });
   }
   setFinishMode(mode: FinishMode): void {

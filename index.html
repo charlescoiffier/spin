@@ -13,10 +13,10 @@
     <main id="app">
       <header>
         <strong>SPIN <small>Parcours</small></strong
-        ><button
+        ><button id="open-online">En ligne</button><button
           id="panel-toggle"
           aria-expanded="true"
-          aria-controls="debug race-ui editor-ui"
+          aria-controls="debug race-ui editor-ui online-ui"
         >
           Masquer le panneau
         </button>
@@ -42,6 +42,7 @@
         aria-label="Éditeur de parcours"
         hidden
       ></aside>
+      <aside class="side-panel" id="online-ui" aria-label="Course en ligne" hidden></aside>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>

@@ -1,5 +1,5 @@
 export function showPanel(
-  id: "debug" | "race-ui" | "editor-ui",
+  id: "debug" | "race-ui" | "editor-ui" | "online-ui",
   mode: string,
 ): HTMLElement {
   document.querySelectorAll<HTMLElement>(".side-panel").forEach((el) => {
@@ -7,6 +7,8 @@ export function showPanel(
   });
   document.querySelector("header small")!.textContent = mode;
   document.getElementById("app")!.dataset.mode = id;
+  const online = document.getElementById('open-online');
+  if (online) online.hidden = id === 'editor-ui' || id === 'online-ui';
   return document.getElementById(id)!;
 }
 export function setupPanelToggle(onResize: () => void): void {

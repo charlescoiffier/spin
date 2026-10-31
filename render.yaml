@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: spin-server
+    runtime: node
+    plan: free
+    region: frankfurt
+    repo: https://github.com/charlescoiffier/spin
+    branch: main
+    buildCommand: npm ci --include=dev && npm run build:server
+    startCommand: node --import tsx server/index.ts
+    healthCheckPath: /health
+    autoDeployTrigger: off
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        value: https://gqqhworxlpowipszmyav.supabase.co
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://charlescoiffier.github.io

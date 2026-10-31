@@ -3,3 +3,8 @@ dist/
 .DS_Store
 
 .superpowers/
+
+.env
+.env.local
+.env.*.local
+.supabase-local/

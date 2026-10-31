@@ -2,6 +2,8 @@ import Phaser from "phaser";
 import { PrototypeScene } from "./scenes/PrototypeScene";
 import { MazeScene } from "./scenes/MazeScene";
 import { EditorScene } from "./scenes/EditorScene";
+import { OnlineRaceScene } from './scenes/OnlineRaceScene';
+import { parseJoinLink, hasRecentRejoin } from './network/JoinLink';
 import { setupPanelToggle } from "./ui/appShell";
 import "./style.css";
 const game = new Phaser.Game({
@@ -11,7 +13,11 @@ const game = new Phaser.Game({
   antialias: true,
   scale: { mode: Phaser.Scale.RESIZE, width: "100%", height: "100%" },
   input: { activePointers: 2 },
-  scene: [MazeScene, PrototypeScene, EditorScene],
+  scene: parseJoinLink(window.location.href) || hasRecentRejoin() ? [OnlineRaceScene, MazeScene, PrototypeScene, EditorScene] : [MazeScene, PrototypeScene, EditorScene, OnlineRaceScene],
+});
+document.getElementById('open-online')!.addEventListener('click', () => {
+  for (const scene of game.scene.getScenes(true)) game.scene.stop(scene.scene.key);
+  game.scene.start('online', {});
 });
 
 const resize = () => {

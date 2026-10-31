@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { PredictionBuffer } from '../src/network/PredictionBuffer';
+import { RaceWorld } from '../src/simulation/RaceWorld';
+import { migrateLegacyTerrain } from '../src/shared/terrainMigration';
+import { courses } from '../src/modes/maze/courses';
+const t = migrateLegacyTerrain(courses[0]).terrain, p = { speed: 5, length: 80, recoilDistance: 8 };
+test('reconciliation replays unreceived input once and ignores old snapshots', () => {
+  const w = new RaceWorld(t, p, false); w.addPlayer('a', 0);
+  const buffer = new PredictionBuffer(t, p, false, 'a');
+  buffer.reconcile(w.snapshot());
+  buffer.record({ seq: 1, requestedTick: 1 }); buffer.advance(10);
+  assert.equal(buffer.getLocalPose()!.pivot, 'B');
+  assert.equal(buffer.reconcile(w.snapshot()), false);
+  w.step(); buffer.reconcile(w.snapshot());
+  assert.equal(buffer.getLocalPose()!.pivot, 'B');
+  w.enqueue('a', { seq: 1, requestedTick: 2 }); w.step();
+  buffer.reconcile(w.snapshot());
+  assert.equal(buffer.getLocalPose()!.pivot, 'B');
+  const m = buffer.getLocalPose()!; assert.ok(Math.abs(Math.hypot(m.a.x - m.b.x, m.a.y - m.b.y) - 80) < 1e-8);
+});
