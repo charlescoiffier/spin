@@ -1,4 +1,4 @@
-import { Room, type Client } from '@colyseus/core';
+import { Room, ServerError, type Client } from '@colyseus/core';
 import { randomBytes } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { RaceSessionController } from './RaceSessionController';
@@ -22,15 +22,17 @@ export function createRaceRoom(services: RoomServices) {
     private counted = false;
     private closing = false;
     async onCreate(options: { token: string; protocol: number; config: LobbyConfig }) {
-      if (options.protocol !== protocolVersion) throw Error('Version du jeu incompatible');
-      const identity = await services.identity.verify(options.token);
-      if (identity.kind !== 'account') throw Error('Un compte est nécessaire pour créer une partie');
+      if (options.protocol !== protocolVersion) throw new ServerError(400, 'Version du jeu incompatible');
+      const identity = await this.verifyIdentity(options.token);
+      if (identity.kind !== 'account') throw new ServerError(403, 'Un compte est nécessaire pour créer une partie');
       const c = options.config;
-      if (!c || typeof c.terrainId !== 'string' || !Number.isSafeInteger(c.revision)) throw Error('Terrain invalide');
-      const terrain = await services.terrains.getForOwner(identity.id, c.terrainId, c.revision, options.token);
-      this.session = new RaceSessionController(terrain, { seats: c.seats, visibility: c.visibility, contactsEnabled: c.contactsEnabled, physics: parseRacePhysics(c.physics) });
+      if (!c || typeof c.terrainId !== 'string' || !Number.isSafeInteger(c.revision)) throw new ServerError(400, 'Terrain invalide');
+      try {
+        const terrain = await services.terrains.getForOwner(identity.id, c.terrainId, c.revision, options.token);
+        this.session = new RaceSessionController(terrain, { seats: c.seats, visibility: c.visibility, contactsEnabled: c.contactsEnabled, physics: parseRacePhysics(c.physics) });
+      } catch (error) { throw new ServerError(400, 'Terrain ou réglages incompatibles. Vérifiez les départs et l’arrivée.', { cause: error }); }
       this.creatorId = identity.id; this.quotaOwnerId = identity.id;
-      if ((counts.get(identity.id) ?? 0) >= 3 || total >= 64) throw Error('Limite de parties atteinte');
+      if ((counts.get(identity.id) ?? 0) >= 3 || total >= 64) throw new ServerError(429, 'Limite de parties atteinte');
       counts.set(identity.id, (counts.get(identity.id) ?? 0) + 1); total++; this.counted = true;
       this.maxClients = c.seats;
       this.code = randomBytes(9).toString('base64url');
@@ -43,11 +45,15 @@ export function createRaceRoom(services: RoomServices) {
       this.updateDirectory();
     }
     async onAuth(_client: Client, options: { token: string; code?: string; protocol: number; name?: string }) {
-      if (options.protocol !== protocolVersion) throw Error('Version du jeu incompatible');
-      const identity = await services.identity.verify(options.token);
-      if (this.session.rules.visibility === 'private' && identity.id !== this.creatorId && options.code !== this.code) throw Error('Code privé requis');
-      if (this.session.view(performance.now()).members.some(m => m.id === identity.id)) throw Error('Ce joueur est déjà présent');
+      if (options.protocol !== protocolVersion) throw new ServerError(400, 'Version du jeu incompatible');
+      const identity = await this.verifyIdentity(options.token);
+      if (this.session.rules.visibility === 'private' && identity.id !== this.creatorId && options.code !== this.code) throw new ServerError(403, 'Code privé requis');
+      if (this.session.view(performance.now()).members.some(m => m.id === identity.id)) throw new ServerError(409, 'Ce joueur est déjà présent');
       return { ...identity, displayName: typeof options.name === 'string' ? options.name.trim().slice(0, 24) || identity.displayName : identity.displayName };
+    }
+    private async verifyIdentity(token: string): Promise<VerifiedIdentity> {
+      try { return await services.identity.verify(token); }
+      catch (error) { throw new ServerError(401, 'Connexion requise. Reconnectez-vous avant de rejoindre.', { cause: error }); }
     }
     onJoin(client: Client, _options: unknown, identity: VerifiedIdentity) {
       this.session.join(identity.id, identity.displayName, performance.now());

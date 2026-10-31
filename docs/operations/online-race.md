@@ -45,6 +45,10 @@ Choix utilisateur : hébergement Render gratuit pour les essais ; **SMTP dédié
 
 Choix confirmé : **Render Free pour les essais**, sans option payante. `render.yaml` décrit une instance Node 22 à Francfort, construite depuis `feat/online-race`, sans déploiement automatique, avec `/health` et les seules variables publiques Supabase. Après fusion du code, remplacer la branche de référence par `main`. Le SMTP dédié est reporté.
 
+Service créé : `spin-server`, URL `https://spin-server-pifj.onrender.com`, identifiant `srv-dbiniqqjnfac73b4cki0`. Premier build de `5dae8ef` réussi ; `/health` répond 200 avec protocole 1. Le service utilise le runtime Node natif de Render, sans besoin d’une clé administrateur Supabase. La CI GitHub `41171613104` a aussi construit avec succès l’image Docker et exécuté les tests réels sur Linux. `VITE_AUTH_PREVIEW=true` indique dans le jeu que la connexion email est réservée aux testeurs autorisés jusqu’à configuration SMTP.
+
+Compatibilité proxy : Colyseus utilise certains codes applicatifs 520–526 comme statuts HTTP. Le serveur normalise ces statuts sur `/matchmake/` (par exemple, partie absente : HTTP 404 avec code applicatif 522 dans le JSON). Les refus prévisibles utilisent 400/401/403/409/429. Cela évite que le proxy remplace un refus normal par une page HTML « Origin is unreachable ». Les tests de transport verrouillent ce comportement.
+
 - Frontend : GitHub Pages existant, variables publiques injectées au build.
 - Serveur : un conteneur Node 22 sur Render en région européenne, une seule instance au départ (annuaire et jetons invités en mémoire), HTTPS/WSS et `/health`. Dockerfile : `server/Dockerfile`, contexte racine. Une autre offre de conteneur persistant peut convenir sans modifier la simulation.
 - Comptes/base : projet Supabase dédié en région européenne, migrations versionnées, URL de retour `https://charlescoiffier.github.io/spin/`, fournisseur SMTP configuré avant ouverture aux invités externes.

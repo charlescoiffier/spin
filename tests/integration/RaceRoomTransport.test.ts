@@ -7,6 +7,8 @@ import { migrateLegacyTerrain } from '../../src/shared/terrainMigration';
 import { courses } from '../../src/modes/maze/courses';
 import type { LobbyView, RaceWelcome } from '../../src/shared/lobby';
 test('real transport refuses guests creating, hides private rooms and runs two clients', async () => {
+  const previousEnvironment = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'production';
   const directory = new LobbyDirectory();
   const { server, transport, start } = createServer({ directory,
     identity: { async verify(token) {
@@ -28,7 +30,12 @@ test('real transport refuses guests creating, hides private rooms and runs two c
   let a: Awaited<ReturnType<typeof client.create>> | undefined, b: typeof a;
   const extra: NonNullable<typeof a>[] = [];
   try {
-    await assert.rejects(client.create('race', { protocol: 1, token: 'guest', config }));
+    const rejectedGuest = await fetch(`${endpoint}/matchmake/create/race`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ protocol: 1, token: 'guest', config }) });
+    assert.equal(rejectedGuest.status, 403, 'Expected denials must use real HTTP status codes, not proxy-specific 523');
+    const staleRoom = await fetch(`${endpoint}/matchmake/joinById/missing-room`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ protocol: 1, token: 'guest' }) });
+    assert.equal(staleRoom.status, 404);
+    assert.equal((await staleRoom.json()).code, 522, 'Preserve the application code in the JSON payload');
+    await assert.rejects(client.create('race', { protocol: 1, token: 'guest', config }), /Un compte est nécessaire/);
     a = await client.create('race', { protocol: 1, token: 'account', config });
     a.onMessage('view', () => {});
     const welcome = await new Promise<RaceWelcome>(resolve => a!.onMessage('welcome', resolve));
@@ -75,5 +82,8 @@ test('real transport refuses guests creating, hides private rooms and runs two c
     });
     host.reconnection.enabled = false; host.connection.close(4010);
     await closed;
-  } finally { for (const room of extra) await room.leave(); await b?.leave(); await a?.leave(); await server.gracefullyShutdown(false); }
+  } finally {
+    for (const room of extra) await room.leave(); await b?.leave(); await a?.leave(); await server.gracefullyShutdown(false);
+    if (previousEnvironment === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = previousEnvironment;
+  }
 });

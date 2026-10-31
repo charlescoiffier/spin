@@ -20,7 +20,7 @@ export class LobbyPanel {
   private pending = false;
   constructor(private root: HTMLElement, readonly network: RaceClient, callbacks: { back(): void; edit(course?: MazeDefinition, cloud?: { id: string; revision: number }): void }, invite?: string) {
     root.innerHTML = `<h1>Course en ligne</h1><p class="online-notice" role="status"></p>
-      <section class="online-menu"><details open><summary>Mon compte</summary><p class="account-state"></p>
+      <section class="online-menu"><details open><summary>Mon compte</summary><p class="account-state"></p><p class="auth-preview note" hidden>Pendant ces essais, la connexion par email est réservée aux testeurs autorisés. Les autres joueurs peuvent rejoindre comme invités.</p>
       <form class="login-form"><label>Email<input type="email" name="email" autocomplete="email" required></label><button>Recevoir un lien de connexion</button></form><button class="logout" hidden>Se déconnecter</button></details>
       <label>Votre pseudo<input class="nickname" type="text" maxlength="24" autocomplete="nickname" value="Invité"></label>
       <h2>Rejoindre une partie</h2><form class="join-form"><label>Code de la partie<input class="invite-code" maxlength="12" type="text" autocapitalize="off" spellcheck="false"></label><button>Rejoindre par code</button></form>
@@ -95,6 +95,7 @@ export class LobbyPanel {
     this.root.querySelector('.account-state')!.textContent = session ? 'Compte connecté' : account.client ? 'Vous jouez comme invité.' : 'Les comptes ne sont pas encore configurés sur cette installation.';
     this.root.querySelector<HTMLElement>('.login-form')!.hidden = !!session || !account.client;
     this.root.querySelector<HTMLElement>('.logout')!.hidden = !session;
+    this.root.querySelector<HTMLElement>('.auth-preview')!.hidden = !!session || import.meta.env.VITE_AUTH_PREVIEW !== 'true';
     this.root.querySelector<HTMLButtonElement>('.create')!.disabled = !session;
     this.root.querySelector<HTMLElement>('.account-required')!.hidden = !!session;
     this.personal = session ? await cloudTerrains.list() : [];

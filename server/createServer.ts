@@ -30,6 +30,16 @@ export function createServer(services: RoomServices, origins: string[], guests?:
     const handlers = http.listeners('request'); http.removeAllListeners('request');
     const windows = new Map<string, { count: number; until: number }>();
     http.on('request', (req, res) => {
+      if (req.url?.startsWith('/matchmake/')) {
+        // Colyseus puts application codes (520–526) in the HTTP status.
+        // Edge proxies interpret 522/523 as infrastructure failures and replace
+        // the JSON body with HTML. Keep application codes in JSON, use real HTTP here.
+        const httpStatus: Record<number, number> = { 520: 404, 521: 400, 522: 404, 523: 500, 524: 409, 525: 401, 526: 400 };
+        const writeHead = res.writeHead;
+        res.writeHead = function (this: import('node:http').ServerResponse, code: number, ...args: unknown[]) {
+          return Reflect.apply(writeHead, this, [httpStatus[code] ?? code, ...args]);
+        };
+      }
       const origin = req.headers.origin;
       if (origin && !origins.includes(origin)) { res.writeHead(403); res.end('Origin refused'); return; }
       const now = Date.now();
