@@ -39,4 +39,6 @@ test('editor moves the selected multiplayer start and undo restores it', () => {
   assert.equal(doc.course.spawn.a.y, 200);
   doc.undo();
   assert.notEqual(doc.course.raceSpawns![1].a.y, 300);
+  doc.undo();
+  assert.equal(doc.activeSpawnIndex, 0);
 });

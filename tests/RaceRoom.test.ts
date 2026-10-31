@@ -30,5 +30,16 @@ test('ready result cannot change if client drops after the finishing tick', () =
   const result = s.view(3010).result;
   assert.deepEqual(result?.winners, ['a']);
   s.drop('a', 3010); s.advance(4000);
+  s.reconnect('a', 4100);
   assert.deepEqual(s.view(4000).result, result);
+});
+test('a dropped racer can reconnect after another racer has won and receives the result', () => {
+  const terrain = structuredClone(t);
+  terrain.goal = { mode: 'touch', rect: { x: 150, y: 170, width: 150, height: 60 } };
+  const s = new RaceSessionController(terrain, config);
+  s.join('a', 'Alice', 0); s.join('b', 'Bob', 0); s.advance(3000);
+  s.drop('b', 3000); s.advance(3010);
+  assert.equal(s.view(3010).status, 'finished');
+  s.reconnect('b', 3100);
+  assert.deepEqual(s.view(3100).result!.winners, ['a']);
 });

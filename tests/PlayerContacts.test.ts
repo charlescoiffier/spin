@@ -35,3 +35,15 @@ test('ghost race has no player impact', () => {
   w.addPlayer('a', 0); w.addPlayer('b', 1);
   for (let i = 0; i < 500; i++) { w.step(); assert.equal(w.snapshot().events.length, 0); }
 });
+test('a remote third racer is not slowed by a collision between two other players', () => {
+  const terrain = migrateLegacyTerrain(courses[0]).terrain;
+  terrain.raceSpawns = [terrain.raceSpawns[0], terrain.raceSpawns[1], { a: { x: 800, y: 800 }, angle: 0 }];
+  const w = new RaceWorld(terrain, { length: 80, speed: 5, recoilDistance: 8 }, true);
+  for (let i = 0; i < 3; i++) w.addPlayer(String(i), i);
+  const independent = new SpinMotion(80, 5); independent.resetAt({ x: 800, y: 800 }, 0);
+  for (let i = 0; i < 100; i++) {
+    w.step(); independent.update(1 / 240);
+    const actual = w.snapshot().players.find(p => p.id === '2')!.motion;
+    assert.ok(Math.hypot(actual.b.x - independent.b.x, actual.b.y - independent.b.y) < 1e-7);
+  }
+});

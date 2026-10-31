@@ -62,7 +62,7 @@ export function createRaceRoom(services: RoomServices) {
       const identity = this.names.get(client.sessionId); if (!identity) return;
       this.session.drop(identity.id, performance.now()); this.updateDirectory();
       try { await this.allowReconnection(client, 30); }
-      catch { this.session.leave(identity.id, performance.now()); this.names.delete(client.sessionId); }
+      catch { /* Colyseus invokes onLeave next; retain identity for ownership transfer/closure. */ }
     }
     onReconnect(client: Client) {
       const identity = this.names.get(client.sessionId)!;

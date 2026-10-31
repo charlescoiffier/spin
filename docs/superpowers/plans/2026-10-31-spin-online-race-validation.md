@@ -2,6 +2,8 @@
 
 Date : 31 octobre 2026. Branche : `feat/online-race`. **Travail en cours, non publié.**
 
+Dernier point vérifié : 78 tests unitaires réussis, compilations client/serveur réussies, intégration transport réussie (dont expiration réelle à 30 secondes). [Revue et corrections](2026-10-31-spin-online-race-review.md).
+
 ## Vérifié localement
 
 - Référence avant changement : 58 tests, compilation client réussie.

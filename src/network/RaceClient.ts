@@ -14,13 +14,17 @@ export class RaceClient {
   private previousAt = 0;
   private receivedAt = 0;
   private storedAt = 0;
+  private generation = 0;
   onChange: () => void = () => {};
   onNotice: (text: string) => void = () => {};
-  constructor(readonly endpoint: string) { this.sdk = new Client(endpoint); }
+  constructor(readonly endpoint: string, transport?: Pick<Client, 'create' | 'joinById' | 'reconnect'>) { this.sdk = (transport ?? new Client(endpoint)) as Client; }
   async connect(join: { roomId?: string; code?: string; token: string; config?: LobbyConfig; name?: string }): Promise<void> {
     if (!this.endpoint) throw Error('Service de jeu non configuré');
     const options = { name: join.name, protocol: protocolVersion, token: join.token, code: join.code, config: join.config };
-    this.room = join.config ? await this.sdk.create('race', options) : await this.sdk.joinById(join.roomId!, options);
+    const generation = ++this.generation;
+    const room = join.config ? await this.sdk.create('race', options) : await this.sdk.joinById(join.roomId!, options);
+    if (generation !== this.generation) { await room.leave(); throw Error('Connexion annulée'); }
+    this.room = room;
     this.attach();
   }
   private attach(): void {
@@ -50,10 +54,13 @@ export class RaceClient {
     this.room.onError((_code, message) => this.onNotice(message ?? 'Connexion impossible'));
   }
   async resume(): Promise<boolean> {
+    const generation = ++this.generation;
     try {
       const saved = JSON.parse(sessionStorage.getItem('spin:rejoin') ?? 'null');
       if (!saved || saved.endpoint !== this.endpoint || Date.now() - saved.at > 30000) return false;
-      this.room = await this.sdk.reconnect(saved.token); this.attach(); return true;
+      const room = await this.sdk.reconnect(saved.token);
+      if (generation !== this.generation) { await room.leave(); return false; }
+      this.room = room; this.attach(); return true;
     } catch { return false; }
   }
   spin(): void {
@@ -77,5 +84,5 @@ export class RaceClient {
       return { id: p.id, motion: { ...p.motion, a, b: { x: a.x + Math.cos(interpolated) * p.motion.length, y: a.y + Math.sin(interpolated) * p.motion.length } } };
     });
   }
-  async disconnect(): Promise<void> { const room = this.room; this.room = null; this.connected = false; try { sessionStorage.removeItem('spin:rejoin'); } catch { /* optional */ } await room?.leave(); }
+  async disconnect(): Promise<void> { this.generation++; const room = this.room; this.room = null; this.connected = false; try { sessionStorage.removeItem('spin:rejoin'); } catch { /* optional */ } await room?.leave(); }
 }

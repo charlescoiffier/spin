@@ -36,12 +36,13 @@ export class RaceSessionController {
   }
   spin(id: string, command: SpinCommand): void { if (this.status === 'running' && this.members.get(id)?.connected) this.world.enqueue(id, command); }
   drop(id: string, now: number): void {
-    const m = this.members.get(id); if (!m || !m.connected || this.status === 'finished') return;
+    const m = this.members.get(id); if (!m || !m.connected) return;
     m.connected = false; m.droppedAt = now; this.world.removePlayer(id); this.countdown(now);
   }
   reconnect(id: string, now: number): void {
     const m = this.members.get(id);
-    if (!m || m.connected || m.droppedAt === null || now - m.droppedAt > 30000 || this.status === 'finished') throw Error('Délai de retour dépassé');
+    if (!m || m.connected || m.droppedAt === null || now - m.droppedAt > 30000) throw Error('Délai de retour dépassé');
+    if (this.status === 'finished') { m.connected = true; m.droppedAt = null; return; }
     try { this.world.addPlayer(id, m.spawnIndex); }
     catch { this.waitingRespawns.add(id); }
     m.connected = true; m.droppedAt = null; this.countdown(now);

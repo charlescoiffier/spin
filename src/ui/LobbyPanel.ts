@@ -87,6 +87,7 @@ export class LobbyPanel {
     this.timer = setInterval(() => { if (!network.view && !this.pending) void this.refreshPublic().catch(() => {}); }, 5000);
     void this.restore().catch(e => this.notice(e.message));
     void this.refreshPublic().catch(e => this.notice(e.message));
+    this.update();
   }
   private terrains(): TerrainV2[] { return [...courses.map(c => migrateLegacyTerrain(c).terrain), ...this.personal]; }
   private async restore() {
@@ -127,6 +128,8 @@ export class LobbyPanel {
   notice(text: string): void { if (!this.controller.signal.aborted) this.root.querySelector('.online-notice')!.textContent = text; }
   update(): void {
     const view = this.network.view, welcome = this.network.welcome;
+    document.getElementById('app')!.classList.toggle('online-idle', !view);
+    document.getElementById('panel-toggle')!.hidden = !view;
     this.root.querySelector<HTMLElement>('.online-menu')!.hidden = !!view;
     this.root.querySelector<HTMLElement>('.online-session')!.hidden = !view;
     if (!view || !welcome) return;
@@ -139,5 +142,9 @@ export class LobbyPanel {
     this.root.querySelector('.online-result')!.textContent = view.result ? view.result.winners.length ? `Victoire : ${view.result.winners.map(id => view.members.find(m => m.id === id)?.name ?? 'Joueur').join(', ')}` : 'Partie abandonnée' : '';
     this.notice('');
   }
-  destroy(): void { clearInterval(this.timer); this.controller.abort(); this.root.replaceChildren(); }
+  destroy(): void {
+    clearInterval(this.timer); this.controller.abort(); this.root.replaceChildren();
+    document.getElementById('app')!.classList.remove('online-idle');
+    document.getElementById('panel-toggle')!.hidden = false;
+  }
 }

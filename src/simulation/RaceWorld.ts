@@ -86,9 +86,20 @@ export class RaceWorld {
       if (!this.contactsEnabled) continue;
       const hits = pairs();
       if (!hits.length) continue;
+      const full = players.map(p => ({ motion: p.motion.snapshot(), collision: p.collision.snapshot() }));
       let low = 0, high = 1;
       for (let n = 0; n < 12; n++) { const mid = (low + high) / 2; submove(mid); if (pairs().length) high = mid; else low = mid; }
       submove(Math.max(0, low - 1e-6));
+      const safe = players.map(p => ({ motion: p.motion.snapshot(), collision: p.collision.snapshot() }));
+      const affected = new Set(hits.flatMap(hit => [hit.a, hit.b]));
+      // Uninvolved racers consume the full step. Expand only if their full pose
+      // would overlap a participant stopped at the earlier contact.
+      for (let round = 0; round <= players.length; round++) {
+        players.forEach((p, i) => { const state = affected.has(p) ? safe[i] : full[i]; p.motion.restore(state.motion); p.collision.restore(state.collision); });
+        const mixed = pairs().filter(hit => !affected.has(hit.a) || !affected.has(hit.b));
+        if (!mixed.length) break;
+        for (const hit of mixed) { affected.add(hit.a); affected.add(hit.b); if (!hits.some(h => h.key === hit.key)) hits.push(hit); }
+      }
       const normals = new Map<Player, { x: number; y: number }>();
       for (const { a, b, key, hit } of hits) {
         if (this.lockedPairs.has(key)) continue;

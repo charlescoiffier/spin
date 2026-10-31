@@ -64,5 +64,16 @@ test('real transport refuses guests creating, hides private rooms and runs two c
     })));
     assert.equal(results[0].result!.winners.length, 4);
     for (const v of results) assert.deepEqual(v.result, results[0].result);
+    const host = await client.create('race', { protocol: 1, token: 'account', config: { ...config, seats: 3 } });
+    extra.push(host); host.onMessage('view', () => {});
+    const invite = await new Promise<RaceWelcome>(resolve => host.onMessage('welcome', resolve));
+    const stranded = await new Client(endpoint).joinById(host.roomId, { protocol: 1, token: 'guest3', code: invite.code });
+    extra.push(stranded); stranded.onMessage('view', () => {}); stranded.onMessage('welcome', () => {}); stranded.onMessage('notice', () => {});
+    const closed = new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(Error('Host timeout left guest stranded in waiting lobby')), 34000);
+      stranded.onLeave(() => { clearTimeout(timeout); resolve(); });
+    });
+    host.reconnection.enabled = false; host.connection.close(4010);
+    await closed;
   } finally { for (const room of extra) await room.leave(); await b?.leave(); await a?.leave(); await server.gracefullyShutdown(false); }
 });

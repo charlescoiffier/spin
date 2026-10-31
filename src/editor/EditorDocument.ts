@@ -61,6 +61,7 @@ export class EditorDocument {
     if (p) {
       this.future.push(this.course);
       this.course = p;
+      this.activeSpawnIndex = Math.min(this.activeSpawnIndex, (this.course.raceSpawns?.length ?? 1) - 1);
       this.selected = null;
     }
   }
@@ -69,6 +70,7 @@ export class EditorDocument {
     if (p) {
       this.past.push(this.course);
       this.course = p;
+      this.activeSpawnIndex = Math.min(this.activeSpawnIndex, (this.course.raceSpawns?.length ?? 1) - 1);
       this.selected = null;
     }
   }

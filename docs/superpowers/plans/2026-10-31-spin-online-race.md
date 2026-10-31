@@ -10,6 +10,8 @@
 
 **Spec:** [Document cadre validé](../specs/2026-10-31-spin-multiplayer-design.md). [Feuille de route complète](2026-10-31-spin-roadmap.md).
 
+**État au 31 octobre :** socle des tâches 1 à 8 implémenté sur `feat/online-race`, revue corrigée ; vérifications de stockage réel, comptes, appareils et publication des tâches 5, 7, 8 et 9 encore en attente. Voir [journal de validation](2026-10-31-spin-online-race-validation.md). Les cases ci-dessous restent la liste complète des critères, pas une déclaration de livraison.
+
 ## Global Constraints
 
 - Vitesse standard 5 rad/s, barre 80 px, zoom 0,7, lissage caméra 0,3 s ; recul réglable jusqu’à 100 px dans le laboratoire.
