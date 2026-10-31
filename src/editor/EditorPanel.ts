@@ -39,7 +39,7 @@ export class EditorPanel {
     );
     const change = (selector: string, fn: (value: string) => void) =>
       root.querySelector<HTMLInputElement>(selector)!.addEventListener(
-        [".course-name", ".angle", ".object-width", ".object-height"].includes(
+        [".course-name", ".angle", ".object-width", ".object-height", ".spawn-count"].includes(
           selector,
         )
           ? "input"
