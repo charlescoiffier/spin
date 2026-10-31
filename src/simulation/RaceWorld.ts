@@ -1,6 +1,6 @@
 import { SpinMotion } from '../core/SpinMotion';
 import { CollisionMotion } from '../collision/CollisionMotion';
-import { containsDisk, getContacts } from '../collision/geometry';
+import { containsDisk, getContacts, type Wall } from '../collision/geometry';
 import { parseTerrain, type TerrainV2 } from '../shared/terrain';
 import { parseRacePhysics, type RacePhysics } from '../shared/raceSettings';
 import type { PlayerSnapshot, RaceSnapshot, SpinCommand, QueuedSpin, RaceEvent } from '../shared/raceProtocol';
@@ -14,8 +14,18 @@ export class RaceWorld {
   private players = new Map<string, Player>();
   private lockedPairs = new Set<string>();
   private events: RaceEvent[] = [];
+  private walls: readonly Wall[];
   constructor(terrain: TerrainV2, physics: RacePhysics, readonly contactsEnabled: boolean) {
     this.terrain = parseTerrain(terrain); this.physics = parseRacePhysics(physics);
+    const b = this.terrain.bounds;
+    const frame = [
+      { x: b.x - 24, y: b.y - 24, width: b.width + 48, height: 24 },
+      { x: b.x - 24, y: b.y + b.height, width: b.width + 48, height: 24 },
+      { x: b.x - 24, y: b.y, width: 24, height: b.height },
+      { x: b.x + b.width, y: b.y, width: 24, height: b.height },
+    ];
+    let prefix = '__frame'; while (this.terrain.walls.some(w => w.id.startsWith(prefix))) prefix += '_';
+    this.walls = [...this.terrain.walls, ...frame.map((r, i) => ({ ...r, id: `${prefix}:${i}` }))];
   }
   addPlayer(id: string, spawnIndex: number): void {
     if (!id || id.length > 80 || this.players.has(id) || this.players.size >= 4) throw Error('Joueur invalide');
@@ -26,7 +36,7 @@ export class RaceWorld {
     if (![motion.a, motion.b].every(p => containsDisk(this.terrain.bounds, p, 17)) || getContacts(motion.a, motion.b, 17, 3.5, this.terrain.walls).length ||
       (this.contactsEnabled && [...this.players.values()].some(p => playerContact(motion.snapshot(), p.motion.snapshot()))))
       throw Error('Départ incompatible avec les réglages');
-    const collision = new CollisionMotion(motion, this.terrain.walls); collision.setRecoilDistance(this.physics.recoilDistance);
+    const collision = new CollisionMotion(motion, this.walls); collision.setRecoilDistance(this.physics.recoilDistance);
     this.players.set(id, { id, spawnIndex, motion, collision, ack: 0, lastReceived: 0, queue: [], rateTicks: [] });
   }
   removePlayer(id: string): void {
@@ -103,7 +113,7 @@ export class RaceWorld {
     for (const s of snapshot.players) {
       // Admission validates initial poses, not currently moving poses.
       const motion = new SpinMotion(this.physics.length, this.physics.speed); motion.restore(s.motion);
-      const collision = new CollisionMotion(motion, this.terrain.walls); collision.setRecoilDistance(this.physics.recoilDistance); collision.restore(s.collision);
+      const collision = new CollisionMotion(motion, this.walls); collision.setRecoilDistance(this.physics.recoilDistance); collision.restore(s.collision);
       this.players.set(s.id, { id: s.id, spawnIndex: s.spawnIndex, motion, collision, ack: s.ack, lastReceived: s.lastReceived, queue: structuredClone(s.queue), rateTicks: [...s.rateTicks] });
     }
     this.lockedPairs = new Set(snapshot.lockedPairs); this.events = structuredClone(snapshot.events);

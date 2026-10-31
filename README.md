@@ -6,6 +6,24 @@ _Twin Spin_ (GlobZ), avec un éditeur visuel dans le navigateur.
 **[Jouer et créer un parcours](https://charlescoiffier.github.io/spin/)** ·
 [Code source](https://github.com/charlescoiffier/spin)
 
+## Évolution multijoueur en cours
+
+La branche `feat/online-race` prépare la première course à 1–4 joueurs : serveur
+autoritaire, contacts optionnels, salons publics/privés, invités, comptes et
+terrains privés versionnés. Elle n’est pas encore publiée : l’authentification,
+les droits en base réelle et les essais sur plusieurs appareils restent à valider.
+L’interface indique clairement lorsque les services ne sont pas configurés.
+
+- [Document cadre validé](docs/superpowers/specs/2026-10-31-spin-multiplayer-design.md)
+- [Feuille de route](docs/superpowers/plans/2026-10-31-spin-roadmap.md)
+- [Plan de la course réseau](docs/superpowers/plans/2026-10-31-spin-online-race.md)
+- [Configuration et commandes réseau](docs/operations/online-race.md)
+
+Pour développer le réseau : `npm run dev:server` dans un terminal et
+`npm run dev` dans un autre. Les comptes et sauvegardes nécessitent la
+configuration décrite dans le guide ; aucun compte de démonstration ne contourne
+les permissions. Le mode solo conserve son fonctionnement local.
+
 ## Jouer
 
 Un clic, un toucher du terrain ou un appui sur **espace** échange le pivot et

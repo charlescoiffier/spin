@@ -21,6 +21,9 @@ export class EditorPanel {
     },
   ) {
     root.innerHTML = `<h1>Éditeur de parcours</h1><label>Nom du parcours<input class="course-name" maxlength="80"></label><div class="editor-tools" aria-label="Outils"><button data-tool="select">Sélection</button><button data-tool="wall">Dessiner un mur</button><button data-tool="spawn">Placer le départ</button><button data-tool="exit">Placer l’arrivée</button><button data-tool="pan">Déplacer la vue</button></div><p class="editor-help">Dessinez par glissement. Sélectionnez un élément pour le déplacer. Grille : 20 px.</p><div class="button-row"><button class="undo">Annuler</button><button class="redo">Rétablir</button></div><fieldset><legend>Élément sélectionné</legend><div class="button-row"><label>Largeur<input class="object-width" type="number" min="24" max="4000" step="20"></label><label>Hauteur<input class="object-height" type="number" min="24" max="4000" step="20"></label></div><button class="delete">Supprimer le mur</button></fieldset><label>Nombre de départs<input class="spawn-count" type="number" min="1" max="4" step="1"></label><label>Départ à modifier<select class="spawn-index"><option value="0">1</option><option value="1">2</option><option value="2">3</option><option value="3">4</option></select></label><label>Orientation du départ (degrés)<input class="angle" type="number" step="15" min="-360" max="360"></label><label>Condition d’arrivée<select class="finish-mode"><option value="pivot">Une boule pivot immobile dans la zone</option><option value="whole">L’ensemble dans la zone</option><option value="touch">Une cible à toucher (boule ou barre)</option></select></label><details class="colors"><summary>Couleurs du décor</summary></details><div class="button-row"><button class="zoom-out" aria-label="Dézoomer">−</button><button class="fit">Cadrer</button><button class="zoom-in" aria-label="Zoomer">+</button></div><p class="editor-errors" role="status"></p><p class="editor-notice" role="status"></p><button class="test primary">Tester le parcours</button><button class="save">Enregistrer le parcours</button><label>Charger un parcours<select class="load-course"><option value="">Choisir…</option></select></label><button class="new-course">Nouveau parcours</button><div class="button-row"><label class="file-button">Importer JSON<input class="import-file" type="file" accept=".json,application/json"></label><button class="export">Exporter JSON</button></div><button class="back">Retour aux parcours</button>`;
+    const oldArrival = root.querySelector<HTMLOptionElement>('.finish-mode option[value="pivot"]')!;
+    if (doc.course.finishMode !== 'pivot') oldArrival.remove();
+    else { oldArrival.textContent = 'Ancienne arrivée : pivot seul (à convertir)'; oldArrival.disabled = true; }
     const signal = this.controller.signal,
       act = (selector: string, fn: () => void) =>
         root.querySelector(selector)!.addEventListener("click", fn, { signal });
@@ -204,7 +207,8 @@ export class EditorPanel {
         errors.length > 0;
   }
   notice(text: string, error = false): void {
-    const p = this.root.querySelector<HTMLElement>(".editor-notice")!;
+    const p = this.root.querySelector<HTMLElement>(".editor-notice");
+    if (!p) return;
     p.textContent = text;
     p.dataset.error = String(error);
   }

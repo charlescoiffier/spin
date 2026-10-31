@@ -16,6 +16,7 @@ export class EditorDocument {
   selected: "spawn" | "exit" | `wall:${string}` | null = null;
   tool: EditorTool = "select";
   activeSpawnIndex = 0;
+  cloudTarget?: { id: string; revision: number };
   get activeSpawn() { return this.course.raceSpawns?.[this.activeSpawnIndex] ?? this.course.spawn; }
   setRaceSpawnCount(count: number): void {
     if (!Number.isInteger(count) || count < 1 || count > 4) return;
