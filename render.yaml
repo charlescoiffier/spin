@@ -5,7 +5,7 @@ services:
     plan: free
     region: frankfurt
     repo: https://github.com/charlescoiffier/spin
-    branch: feat/online-race
+    branch: main
     buildCommand: npm ci --include=dev && npm run build:server
     startCommand: node --import tsx server/index.ts
     healthCheckPath: /health

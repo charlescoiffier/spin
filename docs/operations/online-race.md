@@ -41,9 +41,9 @@ Connexion email activée avec confirmation requise. Site URL et seule URL de red
 
 Choix utilisateur : hébergement Render gratuit pour les essais ; **SMTP dédié reporté**. Tant qu’il n’est pas configuré, le service email intégré ne livre qu’aux adresses membres du projet et impose ses limites. Les invités du jeu rejoignent avec un pseudo sans compte Supabase. [Limites officielles des emails intégrés](https://supabase.com/docs/guides/auth/auth-smtp).
 
-## Proposition de déploiement à approuver avant activation
+## Hébergement d’essai autorisé
 
-Choix confirmé : **Render Free pour les essais**, sans option payante. `render.yaml` décrit une instance Node 22 à Francfort, construite depuis `feat/online-race`, sans déploiement automatique, avec `/health` et les seules variables publiques Supabase. Après fusion du code, remplacer la branche de référence par `main`. Le SMTP dédié est reporté.
+Choix confirmé : **Render Free pour les essais**, sans option payante. `render.yaml` décrit une instance Node 22 à Francfort, construite depuis `main`, sans déploiement automatique, avec `/health` et les seules variables publiques Supabase. Le premier déploiement a été effectué depuis `feat/online-race`. Le SMTP dédié est reporté.
 
 Service créé : `spin-server`, URL `https://spin-server-pifj.onrender.com`, identifiant `srv-dbiniqqjnfac73b4cki0`. Premier build de `5dae8ef` réussi ; `/health` répond 200 avec protocole 1. Le service utilise le runtime Node natif de Render, sans besoin d’une clé administrateur Supabase. La CI GitHub `41171613104` a aussi construit avec succès l’image Docker et exécuté les tests réels sur Linux. `VITE_AUTH_PREVIEW=true` indique dans le jeu que la connexion email est réservée aux testeurs autorisés jusqu’à configuration SMTP.
 
@@ -56,7 +56,9 @@ Compatibilité proxy : Colyseus utilise certains codes applicatifs 520–526 com
 
 Le palier gratuit peut suspendre un projet ou un service inactif. Pour les premières courses ouvertes, préférer un serveur sans mise en veille. Limites de protection initiales du code : 64 salles simultanées au maximum, trois créations actives par compte et 120 requêtes HTTP/minute/adresse ; ces plafonds protègent les entrées mais ne prouvent pas que le serveur supporte 64 salles. Le plafond d’exploitation doit être abaissé après mesure sur l’instance réellement choisie. Ne pas déployer plusieurs instances avant de partager annuaire/présence et identité invitée.
 
-## Avant publication
+## Avant ouverture générale
+
+Le déploiement initial est un essai pilote autorisé pour permettre les vérifications réelles sur plusieurs appareils. Il ne certifie pas ces vérifications comme terminées. Les tests automatisés et les contrôles HTTPS doivent être verts avant ce pilote ; les points suivants restent requis avant une ouverture générale.
 
 - Tests unitaires, compilation client/serveur et droits réels verts ; aucun test de droits ignoré ne vaut validation de sécurité.
 - Deux appareils physiques et quatre clients terminent une course ; contacts activés/désactivés, mauvaise invitation, résultat simultané, arrière-plan et rechargement testés.

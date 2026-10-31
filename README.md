@@ -6,14 +6,18 @@ _Twin Spin_ (GlobZ), avec un éditeur visuel dans le navigateur.
 **[Jouer et créer un parcours](https://charlescoiffier.github.io/spin/)** ·
 [Code source](https://github.com/charlescoiffier/spin)
 
-## Évolution multijoueur en cours
+## Course multijoueur — version d’essai
 
-La branche `feat/online-race` prépare la première course à 1–4 joueurs : serveur
+Le bouton **En ligne** propose une première course à 1–4 joueurs : serveur
 autoritaire, contacts optionnels, salons publics/privés, invités, comptes et
 terrains privés versionnés. L’authentification et les droits ont été vérifiés
-sur Supabase local réel ; le projet Supabase en ligne est configuré. La version
-n’est pas encore publiée : hébergement du serveur et essais sur plusieurs appareils restent à terminer.
-L’interface indique clairement lorsque les services ne sont pas configurés.
+sur Supabase local réel ; Supabase et le serveur Render gratuit sont configurés.
+Un compte permet de créer une partie et de sauvegarder ses terrains ; les invités
+rejoignent avec un pseudo. La connexion par email est actuellement réservée aux
+testeurs autorisés du projet, en attendant un service SMTP dédié.
+Cette version sert aux premiers essais : les tests sur appareils physiques et
+avec latence imposée restent à effectuer. Le serveur gratuit peut mettre environ
+une minute à se réveiller après une période sans activité.
 
 - [Document cadre validé](docs/superpowers/specs/2026-10-31-spin-multiplayer-design.md)
 - [Feuille de route](docs/superpowers/plans/2026-10-31-spin-roadmap.md)
